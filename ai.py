@@ -7,13 +7,12 @@ import decimal
 import time
 import tkinter as tk
 import subprocess
+from sklearn.preprocessing import MinMaxScaler
+from scipy.stats import zscore
 from tkinter import messagebox
 from tensorflow import keras
 from tensorflow.keras import layers
 
-
-
-bars = 1
 
 # Connect to the SQL Express database
 server = 'VENOM-CLIENT\SQLEXPRESS'
@@ -23,34 +22,30 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Database=TRADEBOT;'
                       'Trusted_Connection=yes;')
 
-# Execute SQL query to get the latest record
-#cursor = conn.cursor()
-#cursor.execute("SELECT TOP 1 * FROM Tdata00 ORDER BY timestamp DESC")
-#latest_record = cursor.fetchone()
-#print(latest_record)
-
-
-
-
 # Load data from database
-#query = f"SELECT TOP 10 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00"
-query = f"SELECT TOP 200 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
-#query = "SELECT TOP 2000 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+query = f"SELECT TOP 10 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
 data = []
-
-
 cursor = conn.cursor()
 cursor.execute(query)
 for row in cursor:
     data.append(row)
 cursor.close()
 
-#print(data)
-
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
-X = data[:, 1:9]  # open
+X = data[:, 1:4]  # all
 Y = data[:, 4:5]  # close
+
+print(X)
+
+# Normalize the data 
+# Using MinMax normalization
+    #scaler = MinMaxScaler()
+    #X = scaler.fit_transform(X)
+    #Y = scaler.fit_transform(Y)
+# Using z-score normalization
+X = zscore(X)
+Y = zscore(Y)
 
 print("X")
 print(X)
@@ -58,7 +53,7 @@ print("Y")
 print(Y)
 
 # Split the data into training and testing sets
-split = int(0.95 * len(X))
+split = int(0.70 * len(X))
 X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 
@@ -73,8 +68,9 @@ print(Y_test)
 
 # Define the AI model
 model = keras.Sequential([
-    layers.Dense(64, activation="relu", input_shape=[len(X[0])]),
-    layers.Dense(64, activation="relu"),
+    layers.Dense(3, activation="relu", input_shape=[len(X[0])]),
+    layers.Dense(9, activation="relu"),
+    layers.Dense(9, activation="relu"),
     layers.Dense(1, activation="tanh")
 ])
 model.compile(optimizer="adam", loss="mse")
@@ -83,9 +79,8 @@ model.compile(optimizer="adam", loss="mse")
 model.fit(X_train, Y_train, epochs=1000, batch_size=32,
           validation_data=(X_test, Y_test))
 
-
 # Use the model to predict when to buy or sell
-predictions = model.predict(X)
+predictions = model.predict(X_test)
 print("Prediction on trained data:", predictions[0])
 
 # Do something with the predictions
