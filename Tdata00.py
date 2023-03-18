@@ -21,7 +21,7 @@ while True:
 
     # Calculate start and end times
     end_time = dt.datetime.now()
-    start_time = end_time - dt.timedelta(seconds=80)
+    start_time = end_time - dt.timedelta(days=60)
     print("Data Time Start = " + str(start_time))
     print("Data Time End = " + str(end_time))
 
@@ -59,18 +59,3 @@ while True:
              print("database updated with the following data")
              print(values)
     conn.commit()
-    #import predict
-
-    # run the subprocess
-    process = subprocess.Popen(["python", "predict.py"])
-
-    # wait for the subprocess to complete
-    process.wait()
-
-    # resume the Tdata00.py script
-    print("Predict has finished, resuming Tdata00")
-
-    # Wait for 1 minutes before fetching new data
-    mt5.shutdown()
-    time.sleep(60)
-    mt5.initialize()

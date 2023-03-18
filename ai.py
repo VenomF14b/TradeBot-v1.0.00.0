@@ -23,7 +23,8 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-query = f"SELECT TOP 10 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+#query = f"SELECT TOP 5000 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -33,27 +34,30 @@ cursor.close()
 
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
-X = data[:, 1:4]  # all
+X = data[:, 1:4]  # open, high, low
 Y = data[:, 4:5]  # close
-
-print(X)
-
-# Normalize the data 
-# Using MinMax normalization
-    #scaler = MinMaxScaler()
-    #X = scaler.fit_transform(X)
-    #Y = scaler.fit_transform(Y)
-# Using z-score normalization
-X = zscore(X)
-Y = zscore(Y)
 
 print("X")
 print(X)
 print("Y")
 print(Y)
 
+# Normalize the data 
+# Using MinMax normalization
+scaler = MinMaxScaler()
+X = scaler.fit_transform(X)
+Y = scaler.fit_transform(Y)
+# Using z-score normalization
+#X = zscore(X)
+#Y = zscore(Y)
+
+print("X_Scaled")
+print(X)
+print("Y_Scaled")
+print(Y)
+
 # Split the data into training and testing sets
-split = int(0.70 * len(X))
+split = int(0.80 * len(X))
 X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 
@@ -68,10 +72,10 @@ print(Y_test)
 
 # Define the AI model
 model = keras.Sequential([
-    layers.Dense(3, activation="relu", input_shape=[len(X[0])]),
-    layers.Dense(9, activation="relu"),
-    layers.Dense(9, activation="relu"),
-    layers.Dense(1, activation="tanh")
+    layers.Dense(64, activation="relu", input_shape=[len(X[0])]),
+    layers.Dense(64, activation="relu"),
+    #layers.Dense(1, activation="tanh")
+    layers.Dense(1, activation="linear")
 ])
 model.compile(optimizer="adam", loss="mse")
 
@@ -79,30 +83,20 @@ model.compile(optimizer="adam", loss="mse")
 model.fit(X_train, Y_train, epochs=1000, batch_size=32,
           validation_data=(X_test, Y_test))
 
-# Use the model to predict when to buy or sell
-predictions = model.predict(X_test)
-print("Prediction on trained data:", predictions[0])
 
-# Do something with the predictions
-if np.any(predictions > 0.9):
-    print("Buy")
-elif np.any(predictions < -0.9):
-    # sell code here
-    print("Sell")
-else:
-    # do nothing code here
-    print("Do nothing")
+# Use the model to predict when to buy or sell
+predictions_norm = model.predict(X)
+print("Prediction on trained data (normalized):", predictions_norm[0])
+
+# Inverse transform the predicted values to get actual scale
+predictions_actual = scaler.inverse_transform(predictions_norm)
+print("Prediction on trained data (actual):", predictions_actual[0])
 
 timestamp = int(time.time())  # get current timestamp
 
 model.save(f"trained_model_{timestamp}.h5")  # save model with timestamp in the file name
     
-# run the subprocess
-process = subprocess.Popen(["python", "predict.py"])
-# wait for the subprocess to complete
-process.wait()
-# resume the Tdata00.py script
-print("predict has finished, resuming ai")
+
 
 
 

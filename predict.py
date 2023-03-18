@@ -28,7 +28,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                   'Trusted_Connection=yes;')
 
 # Load data from database
-query = f"SELECT TOP 2 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+query = f"SELECT TOP 1 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -39,19 +39,10 @@ cursor.close()
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
 X_new = data[:, 1:4]
+O_data = data[:, 1:2]
 
 # Make a prediction on the new data point
 Y_pred = model.predict(X_new)
-
-# Normalize the data usinf MinMax
-#scaler = MinMaxScaler()
-#X_new = scaler.fit_transform(X)
-#Y_pred = scaler.fit_transform(Y)
-
-
-# Normalize the data using z-score normalization
-#X_new = zscore(X_new)
-#Y_pred = zscore(Y_pred)
 
 # Extract the file name data of the model loaded and print on screen
 model_name = latest_model_file.split(".")[0]
@@ -64,8 +55,8 @@ print("Predicted closing value:", Y_pred[0][0])
 
 
 # Do something with the predictions
-if np.any(Y_pred > 0.95):
-
+if np.any(Y_pred > O_data):
+    print("Buy")
 # Buy Code
 
 # Set up the API endpoint and credentials
@@ -101,13 +92,13 @@ if np.any(Y_pred > 0.95):
 #type='market',
 #time_in_force='gtc'
 #)
-    print("Buy")
+    
 
-elif np.any(Y_pred < -0.95):
-    # sell code here
-    print("Sell")
+elif np.any(Y_pred < O_data):
+   print("Sell")
+   # sell code here
 else:
-    # do nothing code here
     print("Do nothing")
+    # do nothing code here
 
 
