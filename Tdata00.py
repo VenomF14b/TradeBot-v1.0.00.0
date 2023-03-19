@@ -21,7 +21,7 @@ print(symbol,"timeframe = " + str(timeframe))
 
 # Calculate start and end times
 end_time = dt.datetime.now()
-start_time = end_time - dt.timedelta(days=60)
+start_time = end_time - dt.timedelta(days=7)
 print("Data Time Start = " + str(start_time))
 print("Data Time End = " + str(end_time))
 
@@ -39,9 +39,9 @@ end_time = dt.datetime.now()
 # Establish a connection to the SQL Express database
 print("Establishing a connection to the SQL Express database")
 conn = pyodbc.connect('Driver={SQL Server};'
-      'Server=VENOM-CLIENT\SQLEXPRESS;'
-      'Database=TRADEBOT;'
-      'Trusted_Connection=yes;')
+                      'Server=VENOM-CLIENT\SQLEXPRESS;'
+                      'Database=TRADEBOT;'
+                      'Trusted_Connection=yes;')
 
 # Write the data to the database
 cursor = conn.cursor()
@@ -59,6 +59,10 @@ for rate in rates:
          print("database updated with the following data")
          print(values)
 conn.commit()
+print("SQL complete MT data is up to date")
+
+# call the other script
+subprocess.call(['python', 'predict.py'])
 
 
 
