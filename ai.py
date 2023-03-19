@@ -57,7 +57,7 @@ print("Y_Scaled")
 print(Y)
 
 # Split the data into training and testing sets
-split = int(0.80 * len(X))
+split = int(0.70 * len(X))
 X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 
@@ -72,8 +72,12 @@ print(Y_test)
 
 # Define the AI model
 model = keras.Sequential([
-    layers.Dense(64, activation="relu", input_shape=[len(X[0])]),
+    layers.Dense(3, activation="relu", input_shape=[len(X[0])]),
+    layers.Dense(8, activation="relu"),
+    layers.Dense(32, activation="relu"),
     layers.Dense(64, activation="relu"),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(8, activation="relu"),
     #layers.Dense(1, activation="tanh")
     layers.Dense(1, activation="linear")
 ])

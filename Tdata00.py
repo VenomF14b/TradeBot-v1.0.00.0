@@ -17,45 +17,48 @@ timeframe = mt5.TIMEFRAME_M1
 print("Connection Successful")
 print(symbol,"timeframe = " + str(timeframe))
 
-while True:
-
-    # Calculate start and end times
-    end_time = dt.datetime.now()
-    start_time = end_time - dt.timedelta(days=60)
-    print("Data Time Start = " + str(start_time))
-    print("Data Time End = " + str(end_time))
 
 
+# Calculate start and end times
+end_time = dt.datetime.now()
+start_time = end_time - dt.timedelta(days=60)
+print("Data Time Start = " + str(start_time))
+print("Data Time End = " + str(end_time))
 
-    # Get historical data
-    print("Getting historical data")
-    rates = mt5.copy_rates_range(symbol, timeframe, start_time, end_time)
-    rates = np.array(rates)
 
-    # Update start and end times
-    start_time = end_time
-    end_time = dt.datetime.now()
 
-    # Establish a connection to the SQL Express database
-    print("Establishing a connection to the SQL Express database")
-    conn = pyodbc.connect('Driver={SQL Server};'
-          'Server=VENOM-CLIENT\SQLEXPRESS;'
-          'Database=TRADEBOT;'
-          'Trusted_Connection=yes;')
+# Get historical data
+print("Getting historical data")
+rates = mt5.copy_rates_range(symbol, timeframe, start_time, end_time)
+rates = np.array(rates)
 
-    # Write the data to the database
-    cursor = conn.cursor()
-    for rate in rates:
-        timestamp = int(rate[0])
+# Update start and end times
+start_time = end_time
+end_time = dt.datetime.now()
 
-        # Check if timestamp already exists in the database
-        cursor.execute("SELECT COUNT(*) FROM Tdata00 WHERE timestamp = ?", (timestamp,))
-        count = cursor.fetchone()[0]
-        if count == 0:
+# Establish a connection to the SQL Express database
+print("Establishing a connection to the SQL Express database")
+conn = pyodbc.connect('Driver={SQL Server};'
+      'Server=VENOM-CLIENT\SQLEXPRESS;'
+      'Database=TRADEBOT;'
+      'Trusted_Connection=yes;')
 
-             # Write the data to the database
-             values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
-             cursor.execute("INSERT INTO Tdata00 (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
-             print("database updated with the following data")
-             print(values)
-    conn.commit()
+# Write the data to the database
+cursor = conn.cursor()
+for rate in rates:
+    timestamp = int(rate[0])
+
+    # Check if timestamp already exists in the database
+    cursor.execute("SELECT COUNT(*) FROM Tdata00 WHERE timestamp = ?", (timestamp,))
+    count = cursor.fetchone()[0]
+    if count == 0:
+
+         # Write the data to the database
+         values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
+         cursor.execute("INSERT INTO Tdata00 (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
+         print("database updated with the following data")
+         print(values)
+conn.commit()
+
+
+
