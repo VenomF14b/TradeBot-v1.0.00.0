@@ -47,8 +47,8 @@ cursor.close()
 
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
-X_new = data[:, 1:4]
-O_data = data[:, 1:2] #open data
+X_new = data[:, 1:5]
+O_data = data[:, 1:2] 
 
 print("X_new")
 print(X_new)
@@ -65,7 +65,7 @@ print(f"Loaded model from file: {latest_model_file}, created at {timestamp}")
 print("X_new")
 print(X_new)
 print("Y_pred")
-print("Predicted closing value:", Y_pred[0][0])
+print("Predicted closing value:", Y_pred)
 
 
 # Do something with the predictions

@@ -20,8 +20,9 @@ print(symbol,"timeframe = " + str(timeframe))
 
 
 # Calculate start and end times
+#end_time = dt.datetime(2023, 3, 1, 23, 59, 59)  # Set date
 end_time = dt.datetime.now()
-start_time = end_time - dt.timedelta(days=7)
+start_time = end_time - dt.timedelta(days=60)
 print("Data Time Start = " + str(start_time))
 print("Data Time End = " + str(end_time))
 
@@ -62,7 +63,7 @@ conn.commit()
 print("SQL complete MT data is up to date")
 
 # call the other script
-subprocess.call(['python', 'predict.py'])
+#subprocess.call(['python', 'predict.py'])
 
 
 

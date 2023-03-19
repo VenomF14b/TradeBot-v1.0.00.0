@@ -34,9 +34,8 @@ cursor.close()
 
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
-X = data[:, 1:4]  # open, high, low
-Y = data[:, 4:5]  # close
-
+X = data[:, 1:5]  # [open], high, low, [close]
+Y = data[:, 1:5]  # [open], high, low, [close]
 print("X")
 print(X)
 print("Y")
@@ -72,19 +71,19 @@ print(Y_test)
 
 # Define the AI model
 model = keras.Sequential([
-    layers.Dense(3, activation="relu", input_shape=[len(X[0])]),
+    layers.Dense(4, activation="relu", input_shape=[len(X[0])]),
     layers.Dense(8, activation="relu"),
     layers.Dense(32, activation="relu"),
     layers.Dense(64, activation="relu"),
     layers.Dense(32, activation="relu"),
     layers.Dense(8, activation="relu"),
+    layers.Dense(4, activation="linear")
     #layers.Dense(1, activation="tanh")
-    layers.Dense(1, activation="linear")
 ])
 model.compile(optimizer="adam", loss="mse")
 
 # Train the model
-model.fit(X_train, Y_train, epochs=1000, batch_size=32,
+model.fit(X_train, Y_train, epochs=2000, batch_size=8,
           validation_data=(X_test, Y_test))
 
 
