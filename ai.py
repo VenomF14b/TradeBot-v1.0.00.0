@@ -3,15 +3,17 @@ import numpy as np
 import tensorflow as tf
 import pyodbc
 import datetime as dt
+import datetime
 import decimal
 import time
 import tkinter as tk
 import subprocess
-from sklearn.preprocessing import MinMaxScaler
-from scipy.stats import zscore
+#from sklearn.preprocessing import MinMaxScaler
+#from scipy.stats import zscore
 from tkinter import messagebox
 from tensorflow import keras
 from tensorflow.keras import layers
+from datetime import datetime
 
 
 # Connect to the SQL Express database
@@ -23,8 +25,8 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-#query = f"SELECT TOP 5000 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
-query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+query = f"SELECT TOP 300 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+#query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -34,26 +36,30 @@ cursor.close()
 
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
-X = data[:, 1:5]  # [open], high, low, [close]
-Y = data[:, 1:5]  # [open], high, low, [close]
+X = data[:, 1:5]  # timestamp, [open], high, low, [close]
+
+# Shift the Y values by one time step to predict the next set of datapoints
+Y = np.roll(data[:, 1:5], -1, axis=0)
 print("X")
 print(X)
 print("Y")
 print(Y)
 
+
+
 # Normalize the data 
 # Using MinMax normalization
-scaler = MinMaxScaler()
-X = scaler.fit_transform(X)
-Y = scaler.fit_transform(Y)
+#scaler = MinMaxScaler()
+#X = scaler.fit_transform(X)
+#Y = scaler.fit_transform(Y)
 # Using z-score normalization
 #X = zscore(X)
 #Y = zscore(Y)
 
-print("X_Scaled")
-print(X)
-print("Y_Scaled")
-print(Y)
+#print("X_Scaled")
+#print(X)
+#print("Y_Scaled")
+#print(Y)
 
 # Split the data into training and testing sets
 split = int(0.70 * len(X))
@@ -79,21 +85,32 @@ model = keras.Sequential([
     layers.Dense(8, activation="relu"),
     layers.Dense(4, activation="linear")
     #layers.Dense(1, activation="tanh")
+
+    #layers.Dense(5, activation="relu", input_shape=[len(X[0])]),
+    #layers.Dense(10, activation="relu"),
+    #layers.Dense(40, activation="relu"),
+    #layers.Dense(80, activation="relu"),
+    #layers.Dense(40, activation="relu"),
+    #layers.Dense(10, activation="relu"),
+    #layers.Dense(5, activation="linear")
+    #layers.Dense(1, activation="tanh")
 ])
+
+
 model.compile(optimizer="adam", loss="mse")
 
 # Train the model
-model.fit(X_train, Y_train, epochs=2000, batch_size=8,
+model.fit(X_train, Y_train, epochs=100, batch_size=4,
           validation_data=(X_test, Y_test))
 
 
 # Use the model to predict when to buy or sell
 predictions_norm = model.predict(X)
-print("Prediction on trained data (normalized):", predictions_norm[0])
+print("Prediction on trained data:", predictions_norm[0])
 
 # Inverse transform the predicted values to get actual scale
-predictions_actual = scaler.inverse_transform(predictions_norm)
-print("Prediction on trained data (actual):", predictions_actual[0])
+#predictions_actual = scaler.inverse_transform(predictions_norm)
+#print("Prediction on trained data (actual):", predictions_actual[0])
 
 timestamp = int(time.time())  # get current timestamp
 

@@ -6,8 +6,17 @@ import datetime as dt
 import decimal
 import subprocess
 import time
+import ctypes
+import signal
+import sys
+import os
 from tensorflow import keras
 from tensorflow.keras import layers
+
+
+
+
+
 
 # Connect to MT5
 print("Establising Connection to MT5, Please wait")
@@ -22,7 +31,7 @@ print(symbol,"timeframe = " + str(timeframe))
 # Calculate start and end times
 #end_time = dt.datetime(2023, 3, 1, 23, 59, 59)  # Set date
 end_time = dt.datetime.now()
-start_time = end_time - dt.timedelta(days=60)
+start_time = end_time - dt.timedelta(days=7)
 print("Data Time Start = " + str(start_time))
 print("Data Time End = " + str(end_time))
 
@@ -43,6 +52,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Server=VENOM-CLIENT\SQLEXPRESS;'
                       'Database=TRADEBOT;'
                       'Trusted_Connection=yes;')
+print("Connection established")
 
 # Write the data to the database
 cursor = conn.cursor()
@@ -51,19 +61,17 @@ for rate in rates:
 
     # Check if timestamp already exists in the database
     cursor.execute("SELECT COUNT(*) FROM Tdata00 WHERE timestamp = ?", (timestamp,))
+    #cursor.execute("SELECT COUNT(*) FROM (SELECT TOP 500 * FROM Tdata00 ORDER BY timestamp DESC) AS latest WHERE timestamp = ?", (timestamp,))
     count = cursor.fetchone()[0]
     if count == 0:
 
          # Write the data to the database
          values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
          cursor.execute("INSERT INTO Tdata00 (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
-         print("database updated with the following data")
-         print(values)
+         
+print("database updated with the following data")
 conn.commit()
 print("SQL complete MT data is up to date")
 
 # call the other script
-#subprocess.call(['python', 'predict.py'])
-
-
-
+subprocess.Popen(["python", "predict.py"])

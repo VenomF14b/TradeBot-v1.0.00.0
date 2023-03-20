@@ -22,6 +22,15 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Constantai.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="buy.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="sell.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="predict.py">
       <SubType>Code</SubType>
     </Compile>

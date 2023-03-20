@@ -14,6 +14,10 @@ import time
 import os
 import tensorflow as tf
 import subprocess
+import ctypes
+import signal
+import sys
+
 
 
 
@@ -37,7 +41,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
 
 
 # Load data from database
-query = f"SELECT TOP 1 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+query = f"SELECT TOP 2 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -48,31 +52,74 @@ cursor.close()
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
 X_new = data[:, 1:5]
-O_data = data[:, 1:2] 
+O_data = data[:, 1:5] 
 
 print("X_new")
 print(X_new)
 print("Odata")
 print(O_data)
 
+
+scaler = MinMaxScaler()
+X_new = scaler.fit_transform(X_new)
+O_data = scaler.fit_transform(O_data)
+# Using z-score normalization
+#X = zscore(X)
+#Y = zscore(Y)
+
+print("X_Scaled")
+print(X_new)
+print("Y_Scaled")
+print(O_data)
+
+# Last row of original input data X
+last_row = X_new[-1]
+
+# Increment timestamp value by 60 seconds
+next_timestamp = last_row[0] + 60
+
+# Create new input data X_new
+X_latest = np.array([[
+    next_timestamp,  # Timestamp for the next time frame
+    0.0,             # Placeholder value for open
+    0.0,             # Placeholder value for high
+    0.0,             # Placeholder value for low
+    0.0              # Placeholder value for close
+]])
+
+X_latest = X_latest[:, 1:] # Select all rows and columns 1 to 4 (inclusive
+
 # Make a prediction on the new data point
-Y_pred = model.predict(X_new)
+Y_pred = model.predict(X_latest)
+print("Prediction on trained data (normalized):", Y_pred[0])
+
+# Inverse transform the predicted values to get actual scale
+Y_pred_actual = scaler.inverse_transform(Y_pred)
+O_data = scaler.inverse_transform(O_data)
+print("Prediction on trained data (actual):", Y_pred_actual[0])
 
 # Extract the file name data of the model loaded and print on screen
 model_name = latest_model_file.split(".")[0]
 timestamp = model_name.split("_")[-1]
 print(f"Loaded model from file: {latest_model_file}, created at {timestamp}")
-print("X_new")
-print(X_new)
-print("Y_pred")
-print("Predicted closing value:", Y_pred)
+
+
+
+
 
 
 # Do something with the predictions
 Open_adjust_up = 0.00003
 if np.any(Y_pred > O_data + Open_adjust_up):
+
+    print("Y_pred_actual") 
+    print(Y_pred)
+
     print("Buy")
     print("Open Price Adjustor", O_data + Open_adjust_up)
+    
+    
+    
     # Buy Code
     # Set up the API endpoint and credentials
     #endpoint = 'https://www.mql5.com/en/oauth/login'
@@ -86,9 +133,9 @@ if np.any(Y_pred > O_data + Open_adjust_up):
     #account = api.get_account()
 
     #if account.status == 'ACTIVE':
-    #print('Authentication successful')
+    #    print('Authentication successful')
     #else:
-    #print('Authentication failed')
+    #    print('Authentication failed')
 
     # Get last trade for symbol
     #last_trade = api.get_last_trade(symbol=symbol)
@@ -108,21 +155,21 @@ if np.any(Y_pred > O_data + Open_adjust_up):
     #time_in_force='gtc'
     #)
 
-
-Open_adjust_down = -0.00003
-if np.any(Y_pred < O_data + Open_adjust_down):
-   print("Sell")
-   print("Open Price Adjustor", O_data + Open_adjust_down)
-   # sell code here
 else:
-    print("Do nothing")
-    # do nothing code here
+    Open_adjust_down = -0.00003
+    if np.any(Y_pred < O_data + Open_adjust_down):
+       print("Sell")
+       print("Open Price Adjustor", O_data + Open_adjust_down)
+       # sell code here
+
+    else:
+        print("Do nothing")
+        # do nothing code here
 
 
 # wait time before update
 print("Please wait for the new set of data to import (default is set to 60 seconds)")
-#time.sleep(60)
+
 
 # call the other script
-subprocess.call(['python', 'Tdata00.py'])
-
+subprocess.Popen(['python', 'Constantai.py'])
