@@ -25,8 +25,8 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-query = f"SELECT TOP 500 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
-#query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
+#query = f"SELECT TOP 500 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
+query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -100,7 +100,7 @@ model = keras.Sequential([
 model.compile(optimizer="adam", loss="mse")
 
 # Train the model
-model.fit(X_train, Y_train, epochs=100, batch_size=4,
+model.fit(X_train, Y_train, epochs=100, batch_size=1,
           validation_data=(X_test, Y_test))
 
 

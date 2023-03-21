@@ -89,7 +89,7 @@ print("Prediction on trained data (actual):", Y_pred_actual[0])
 
 
 # Do something with the predictions
-Open_adjust_up = 0.00003
+Open_adjust_up = 0.00015
 if np.any(Y_pred > O_data + Open_adjust_up):
     print("Y_pred_actual") 
     print(Y_pred)
@@ -101,7 +101,7 @@ if np.any(Y_pred > O_data + Open_adjust_up):
     os.system(f"start cmd /k python {script_path}")
 
 else:
-    Open_adjust_down = -0.00003
+    Open_adjust_down = -0.00015
     if np.any(Y_pred < O_data + Open_adjust_down):
        print("Sell")
        print("Open Price Adjustor", O_data + Open_adjust_down)

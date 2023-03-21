@@ -21,7 +21,7 @@ print("Connection Successful")
 print(symbol,"timeframe = " + str(timeframe))
 
 end_time = dt.datetime.now()    # Calculate start and end times
-start_time = end_time - dt.timedelta(days=7)   #end_time = dt.datetime(2023, 3, 1, 23, 59, 59)  # Set date
+start_time = end_time - dt.timedelta(days=60)   #end_time = dt.datetime(2023, 3, 1, 23, 59, 59)  # Set date
 print("Data Time Start = " + str(start_time))
 print("Data Time End = " + str(end_time))
 

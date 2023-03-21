@@ -29,7 +29,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-query = f"SELECT TOP 50 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
+query = f"SELECT TOP 60 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 #query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
@@ -67,7 +67,7 @@ print(Y_test)
 model = load_model(r"EURUSD/EURUSD.h5")
 
 # Train the model
-model.fit(X_train, Y_train, epochs=100, batch_size=4,
+model.fit(X_train, Y_train, epochs=100, batch_size=2,
           validation_data=(X_test, Y_test))
 
 # Use the model to predict when to buy or sell
