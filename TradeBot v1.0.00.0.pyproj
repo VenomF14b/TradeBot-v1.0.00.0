@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>71038142-3492-40ab-abc4-a38f31bd45e2</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Tdata00.py</StartupFile>
+    <StartupFile>EURUSD\trainedmodel\EURUSD_adata.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,25 +22,33 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Constantai.py">
+    <Compile Include="EURUSD\Train the model\EURUSD_tdata.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="buy.py">
+    <Compile Include="EURUSD\trainedmodel\EURUSD_constantai.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="sell.py">
+    <Compile Include="EURUSD\trainedmodel\EURUSD_buy.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="predict.py">
+    <Compile Include="EURUSD\trainedmodel\EURUSD_sell.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Tdata00.py">
+    <Compile Include="EURUSD\trainedmodel\EURUSD_predict.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ai.py" />
+    <Compile Include="EURUSD\trainedmodel\EURUSD_adata.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EURUSD\Train the model\EURUSD_trainerai.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.7" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="EURUSD\" />
+    <Folder Include="EURUSD\trainedmodel\" />
+    <Folder Include="EURUSD\Train the model\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

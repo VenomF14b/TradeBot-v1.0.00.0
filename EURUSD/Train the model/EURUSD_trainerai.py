@@ -25,8 +25,8 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-query = f"SELECT TOP 300 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
-#query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+query = f"SELECT TOP 500 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
+#query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -112,16 +112,8 @@ print("Prediction on trained data:", predictions_norm[0])
 #predictions_actual = scaler.inverse_transform(predictions_norm)
 #print("Prediction on trained data (actual):", predictions_actual[0])
 
-timestamp = int(time.time())  # get current timestamp
-
-model.save(f"trained_model_{timestamp}.h5")  # save model with timestamp in the file name
+model.save(r"EURUSD/EURUSD.h5")  # save model with timestamp in the file name
     
-
-
-
-
-
-
 
 
 # Define the reward function for reinforcement learning

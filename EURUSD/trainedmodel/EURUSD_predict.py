@@ -18,18 +18,7 @@ import ctypes
 import signal
 import sys
 
-
-
-
-
-
-# Get a list of all files in the directory that start with "trained_model_"
-model_files = [f for f in os.listdir('.') if f.startswith('trained_model_')]
-# Sort the list by name (which will put the latest model at the end of the list)
-model_files.sort()
-# Load the last file in the list (which should be the latest model)
-latest_model_file = model_files[-1]
-model = load_model(latest_model_file)
+model = load_model(r"EURUSD/EURUSD.h5")
 
 # Connect to the SQL Express database
 server = 'VENOM-CLIENT\SQLEXPRESS'
@@ -41,7 +30,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
 
 
 # Load data from database
-query = f"SELECT TOP 2 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM Tdata00 ORDER BY timestamp DESC"
+query = f"SELECT TOP 2 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -98,62 +87,18 @@ Y_pred_actual = scaler.inverse_transform(Y_pred)
 O_data = scaler.inverse_transform(O_data)
 print("Prediction on trained data (actual):", Y_pred_actual[0])
 
-# Extract the file name data of the model loaded and print on screen
-model_name = latest_model_file.split(".")[0]
-timestamp = model_name.split("_")[-1]
-print(f"Loaded model from file: {latest_model_file}, created at {timestamp}")
-
-
-
-
-
 
 # Do something with the predictions
 Open_adjust_up = 0.00003
 if np.any(Y_pred > O_data + Open_adjust_up):
-
     print("Y_pred_actual") 
     print(Y_pred)
-
     print("Buy")
-    print("Open Price Adjustor", O_data + Open_adjust_up)
-    
-    
-    
+    print("Open Price Adjustor", O_data + Open_adjust_up)    
     # Buy Code
-    # Set up the API endpoint and credentials
-    #endpoint = 'https://www.mql5.com/en/oauth/login'
-    #key_id = 'q0bjra'
-    #secret_key = 'briknghvpoqdwzdlqoqbnrdqxqsdcbzsqkfpjzxdqxfgbcpnrvjkmloknrmxodsn'
-
-    # Initialize the API
-    #api = tradeapi.REST(key_id, secret_key, endpoint, api_version='v2')
-    #print(api)
-
-    #account = api.get_account()
-
-    #if account.status == 'ACTIVE':
-    #    print('Authentication successful')
-    #else:
-    #    print('Authentication failed')
-
-    # Get last trade for symbol
-    #last_trade = api.get_last_trade(symbol=symbol)
-    #latest_price = last_trade.price
-    #print(f"Latest price: {latest_price}")
-
-    # Calculate the quantity of shares to buy
-    #cash_balance = float(api.get_account().cash)
-    #qty = int(cash_balance / latest_price)
-
-    # Place the buy order
-    #api.submit_order(
-    #symbol=symbol,
-    #qty=qty,
-    #side='buy',
-    #type='market',
-    #time_in_force='gtc'
-    #)
+    # open the script in a new terminal window
+    script_path = "EURUSD/trainedmodel/EURUSD_buy.py"
+    os.system(f"start cmd /k python {script_path}")
 
 else:
     Open_adjust_down = -0.00003
@@ -161,15 +106,14 @@ else:
        print("Sell")
        print("Open Price Adjustor", O_data + Open_adjust_down)
        # sell code here
+       # open the script in a new terminal window
+       script_path = "EURUSD/trainedmodel/EURUSD_sell.py"
+       os.system(f"start cmd /k python {script_path}")
 
     else:
         print("Do nothing")
         # do nothing code here
 
 
-# wait time before update
-print("Please wait for the new set of data to import (default is set to 60 seconds)")
-
-
 # call the other script
-subprocess.Popen(['python', 'Constantai.py'])
+subprocess.Popen(['python', 'EURUSD/trainedmodel/EURUSD_constantai.py'])

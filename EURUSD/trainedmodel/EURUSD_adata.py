@@ -60,18 +60,18 @@ for rate in rates:
     timestamp = int(rate[0])
 
     # Check if timestamp already exists in the database
-    cursor.execute("SELECT COUNT(*) FROM Tdata00 WHERE timestamp = ?", (timestamp,))
-    #cursor.execute("SELECT COUNT(*) FROM (SELECT TOP 500 * FROM Tdata00 ORDER BY timestamp DESC) AS latest WHERE timestamp = ?", (timestamp,))
+    cursor.execute("SELECT COUNT(*) FROM EURUSDAdata WHERE timestamp = ?", (timestamp,))
+    #cursor.execute("SELECT COUNT(*) FROM (SELECT TOP 500 * FROM EURUSDAdata ORDER BY timestamp DESC) AS latest WHERE timestamp = ?", (timestamp,))
     count = cursor.fetchone()[0]
     if count == 0:
 
          # Write the data to the database
          values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
-         cursor.execute("INSERT INTO Tdata00 (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
+         cursor.execute("INSERT INTO EURUSDAdata (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
          
 print("database updated with the following data")
 conn.commit()
 print("SQL complete MT data is up to date")
 
 # call the other script
-subprocess.Popen(["python", "predict.py"])
+subprocess.Popen(["python", "EURUSD/trainedmodel/EURUSD_predict.py"])
