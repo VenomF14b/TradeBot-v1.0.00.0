@@ -30,7 +30,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
 
 
 # Load data from database
-query = f"SELECT TOP 2 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
+query = f"SELECT TOP 1 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -49,71 +49,72 @@ print("Odata")
 print(O_data)
 
 
-scaler = MinMaxScaler()
-X_new = scaler.fit_transform(X_new)
-O_data = scaler.fit_transform(O_data)
+#scaler = MinMaxScaler()
+#X_new = scaler.fit_transform(X_new)
+#O_data = scaler.fit_transform(O_data)
 # Using z-score normalization
 #X = zscore(X)
 #Y = zscore(Y)
 
-print("X_Scaled")
-print(X_new)
-print("Y_Scaled")
-print(O_data)
-
-# Last row of original input data X
-last_row = X_new[-1]
-
 # Increment timestamp value by 60 seconds
-next_timestamp = last_row[0] + 60
+#next_timestamp = last_row[0] + 60
+next_timestamp = data[-1, 0] + 60
+
+print(next_timestamp)
 
 # Create new input data X_new
 X_latest = np.array([[
     next_timestamp,  # Timestamp for the next time frame
-    0.0,             # Placeholder value for open
-    0.0,             # Placeholder value for high
-    0.0,             # Placeholder value for low
-    0.0              # Placeholder value for close
+    data[-1, 1],             # Placeholder value for open
+    data[-1, 2],             # Placeholder value for high
+    data[-1, 3],             # Placeholder value for low
+    data[-1, 4]              # Placeholder value for close
 ]])
 
 X_latest = X_latest[:, 1:] # Select all rows and columns 1 to 4 (inclusive
 
+print(X_latest)
+
 # Make a prediction on the new data point
 Y_pred = model.predict(X_latest)
-print("Prediction on trained data (normalized):", Y_pred[0])
-
+print("Prediction:", Y_pred[0])
+Pred_Open = Y_pred[0,0]
+Pred_High = Y_pred[0,1]
+Pred_Low = Y_pred[0,2]
+Pred_Close = Y_pred[0,3]
+Last_Open = O_data[0,0]
+Last_High = O_data[0,1]
+Last_Low = O_data[0,2]
+Last_Close = O_data[0,3]
 # Inverse transform the predicted values to get actual scale
-Y_pred_actual = scaler.inverse_transform(Y_pred)
-O_data = scaler.inverse_transform(O_data)
-print("Prediction on trained data (actual):", Y_pred_actual[0])
+#Y_pred_actual = scaler.inverse_transform(Y_pred)
+#O_data = scaler.inverse_transform(O_data)
+#print("Prediction on trained data (actual):", Y_pred_actual[0])
 
 
 # Do something with the predictions
-Open_adjust_up = 0.00015
-if np.any(Y_pred > O_data + Open_adjust_up):
-    print("Y_pred_actual") 
-    print(Y_pred)
-    print("Buy")
-    print("Open Price Adjustor", O_data + Open_adjust_up)    
+Decision_Adjustor_Buy = 0.0002
+Last_Close_Buy_Helper = Last_Close + Decision_Adjustor_Buy
+if np.any(Pred_Close > Last_Close_Buy_Helper):
+    print("Last_Close_Buy_Helper")
+    print(Last_Close_Buy_Helper)
+    print("Buy")   
     # Buy Code
     # open the script in a new terminal window
-    script_path = "EURUSD/trainedmodel/EURUSD_buy.py"
-    os.system(f"start cmd /k python {script_path}")
+    subprocess.run(['python', 'EURUSD/trainedmodel/EURUSD_buy.py'])
+ 
 
 else:
-    Open_adjust_down = -0.00015
-    if np.any(Y_pred < O_data + Open_adjust_down):
+    Decision_Adjustor_Sell = -0.0002
+    Last_Close_Sell_Helper = Last_Close + Decision_Adjustor_Sell
+    if np.any(Pred_Close < Last_Close_Sell_Helper):
+       print("Last_Close_Sell_Helper")
+       print(Last_Close_Sell_Helper)
        print("Sell")
-       print("Open Price Adjustor", O_data + Open_adjust_down)
        # sell code here
        # open the script in a new terminal window
-       script_path = "EURUSD/trainedmodel/EURUSD_sell.py"
-       os.system(f"start cmd /k python {script_path}")
+       subprocess.run(['python', 'EURUSD/trainedmodel/EURUSD_sell.py'])
 
     else:
         print("Do nothing")
         # do nothing code here
-
-
-# call the other script
-subprocess.Popen(['python', 'EURUSD/trainedmodel/EURUSD_constantai.py'])

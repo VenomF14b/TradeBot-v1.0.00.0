@@ -1,5 +1,9 @@
 import time
 import MetaTrader5 as mt5
+import os
+import sys
+
+
 
 # connect to MetaTrader 5
 if not mt5.initialize():
@@ -8,9 +12,9 @@ if not mt5.initialize():
 
 # define the symbol and order type
 symbol = "EURUSD"
-lot_size = 0.01
+lot_size = 0.1
 stop_loss = 0.0001
-take_profit = 0.0001
+take_profit = 0.0002
 magic_number = 123456
 price = mt5.symbol_info_tick(symbol).ask
 type = mt5.ORDER_TYPE_BUY
@@ -47,3 +51,6 @@ else:
 
 # disconnect from MetaTrader 5
 mt5.shutdown()
+print("BUY")
+
+

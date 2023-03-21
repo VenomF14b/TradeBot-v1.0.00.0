@@ -21,7 +21,7 @@ print("Connection Successful")
 print(symbol,"timeframe = " + str(timeframe))
 
 end_time = dt.datetime.now()    # Calculate start and end times
-start_time = end_time - dt.timedelta(days=60)   #end_time = dt.datetime(2023, 3, 1, 23, 59, 59)  # Set date
+start_time = end_time - dt.timedelta(days=30)   
 print("Data Time Start = " + str(start_time))
 print("Data Time End = " + str(end_time))
 
@@ -38,7 +38,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Database=TRADEBOT;'
                       'Trusted_Connection=yes;')
 print("Connection established")
-
+print("database update in progress please wait...")
 cursor = conn.cursor()  # Write the data to the database
 for rate in rates:
     timestamp = int(rate[0])
@@ -49,7 +49,6 @@ for rate in rates:
          values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
          cursor.execute("INSERT INTO EURUSDTdata (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
          
-print("database updated with the following data")
 conn.commit()
 print("SQL complete MT data is up to date")
 

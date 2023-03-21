@@ -29,7 +29,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-query = f"SELECT TOP 60 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
+query = f"SELECT TOP 64 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 #query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
@@ -75,3 +75,6 @@ predictions_norm = model.predict(X)
 print("Prediction on trained data:", predictions_norm[0])
 
 model.save(r"EURUSD/EURUSD.h5")
+
+subprocess.run(['python', 'EURUSD/trainedmodel/EURUSD_predict.py'])
+
