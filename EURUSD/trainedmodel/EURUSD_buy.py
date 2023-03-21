@@ -14,7 +14,7 @@ if not mt5.initialize():
 symbol = "EURUSD"
 lot_size = 0.1
 stop_loss = 0.0001
-take_profit = 0.0002
+take_profit = 0.0001
 magic_number = 123456
 price = mt5.symbol_info_tick(symbol).ask
 type = mt5.ORDER_TYPE_BUY
@@ -53,4 +53,4 @@ else:
 mt5.shutdown()
 print("BUY")
 
-
+time.sleep(10)
