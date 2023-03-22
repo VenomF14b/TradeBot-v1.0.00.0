@@ -53,5 +53,5 @@ conn.commit()
 print("SQL complete MT data is up to date")
 
 # call the other script
-subprocess.Popen(["python", "EURUSD\Train the model\EURUSD_trainerai.py"])
+subprocess.Popen(["python", "EURUSD\Trainmodel\EURUSD_trainerai.py"])
 

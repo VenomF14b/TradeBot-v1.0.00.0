@@ -29,7 +29,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-query = f"SELECT TOP 4 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
+query = f"SELECT TOP 3 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 #query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
@@ -39,7 +39,7 @@ for row in cursor:
 cursor.close()
 
 # Convert data to numpy array and reverse the order of the rows
-data = np.array(data[::-1])
+data = np.array(data[:])
 X = data[:, 1:5]  # timestamp, [open], high, low, [close]
 
 # Shift the Y values by one time step to predict the next set of datapoints
@@ -51,7 +51,7 @@ print(Y)
 
 
 # Split the data into training and testing sets
-split = int(0.85 * len(X))
+split = int(0.70 * len(X))
 X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 
@@ -67,12 +67,12 @@ print(Y_test)
 model = load_model(r"EURUSD/EURUSD.h5")
 
 # Train the model
-model.fit(X_train, Y_train, epochs=100, batch_size=1,
+model.fit(X_train, Y_train, epochs=5, batch_size=1,
           validation_data=(X_test, Y_test))
 
 # Use the model to predict when to buy or sell
-predictions_norm = model.predict(X)
-print("Prediction on trained data:", predictions_norm[0])
+#predictions_norm = model.predict(X)
+#print("Prediction on trained data:", predictions_norm[0])
 
 model.save(r"EURUSD/EURUSD.h5")
 

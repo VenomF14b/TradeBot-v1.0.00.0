@@ -22,7 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="EURUSD\Train the model\EURUSD_tdata.py">
+    <Compile Include="EURUSD\Trainmodel\EURUSD_tdata.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="EURUSD\trainedmodel\EURUSD_constantai.py">
@@ -40,7 +40,7 @@
     <Compile Include="EURUSD\trainedmodel\EURUSD_adata.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="EURUSD\Train the model\EURUSD_trainerai.py" />
+    <Compile Include="EURUSD\Trainmodel\EURUSD_trainerai.py" />
     <Compile Include="EURUSD\trainedmodel\main.py">
       <SubType>Code</SubType>
     </Compile>
@@ -51,7 +51,7 @@
   <ItemGroup>
     <Folder Include="EURUSD\" />
     <Folder Include="EURUSD\trainedmodel\" />
-    <Folder Include="EURUSD\Train the model\" />
+    <Folder Include="EURUSD\Trainmodel\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

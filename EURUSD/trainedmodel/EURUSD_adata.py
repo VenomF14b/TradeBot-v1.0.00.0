@@ -43,8 +43,8 @@ rates = mt5.copy_rates_range(symbol, timeframe, start_time, end_time)
 rates = np.array(rates)
 
 # Update start and end times
-start_time = end_time
-end_time = dt.datetime.now()
+#start_time = end_time
+#end_time = dt.datetime.now()
 
 # Establish a connection to the SQL Express database
 print("Establishing a connection to the SQL Express database")
