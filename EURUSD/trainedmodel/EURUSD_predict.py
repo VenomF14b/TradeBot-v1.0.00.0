@@ -17,8 +17,21 @@ import subprocess
 import ctypes
 import signal
 import sys
+import glob
+import logging
 
-model = load_model(r"EURUSD/EURUSD.h5")
+logging.basicConfig(filename='EURUSD.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logging.info("Prediction Information")
+
+# Get a list of all the model files in the directory
+#file_list = glob.glob("EURUSD/EURUSD_*.h5")
+
+# Sort the file list by timestamp in descending order
+#file_list.sort(key=os.path.getmtime, reverse=True)
+
+# Load the latest model
+#model = load_model(file_list[0])
+model = load_model("EURUSD/EURUSD.h5")
 
 # Connect to the SQL Express database
 server = 'VENOM-CLIENT\SQLEXPRESS'
@@ -43,10 +56,11 @@ data = np.array(data[::-1])
 X_new = data[:, 1:5]
 O_data = data[:, 1:5] 
 
-print("X_new")
-print(X_new)
-print("Odata")
-print(O_data)
+
+logging.debug("Latest data")
+logging.debug(X_new)
+#logging.debug("Odata")
+#logging.debug(O_data)
 
 
 #scaler = MinMaxScaler()
@@ -60,7 +74,7 @@ print(O_data)
 #next_timestamp = last_row[0] + 60
 next_timestamp = data[-1, 0] + 60
 
-print(next_timestamp)
+logging.debug(next_timestamp)
 
 # Create new input data X_new
 X_latest = np.array([[
@@ -73,11 +87,11 @@ X_latest = np.array([[
 
 X_latest = X_latest[:, 1:] # Select all rows and columns 1 to 4 (inclusive
 
-print(X_latest)
+logging.debug(X_latest)
 
 # Make a prediction on the new data point
 Y_pred = model.predict(X_latest)
-print("Prediction:", Y_pred[0])
+logging.debug("Prediction: %s", str(Y_pred[0]))
 Pred_Open = Y_pred[0,0]
 Pred_High = Y_pred[0,1]
 Pred_Low = Y_pred[0,2]
@@ -89,33 +103,34 @@ Last_Close = O_data[0,3]
 # Inverse transform the predicted values to get actual scale
 #Y_pred_actual = scaler.inverse_transform(Y_pred)
 #O_data = scaler.inverse_transform(O_data)
-#print("Prediction on trained data (actual):", Y_pred_actual[0])
+#logging.debug("Prediction on trained data (actual):", Y_pred_actual[0])
 
 
 # Do something with the predictions
-Decision_Adjustor_Buy = 0.000025
+Decision_Adjustor_Buy = 0.000015
 Last_Close_Buy_Helper = Last_Close + Decision_Adjustor_Buy
 if np.any(Pred_Close > Last_Close_Buy_Helper):
-    print("Last_Close_Buy_Helper")
-    print(Last_Close_Buy_Helper)
-    print("Buy")   
+    logging.debug("Last_Close_Buy_Helper")
+    logging.debug(Last_Close_Buy_Helper)
+    logging.debug("Buy")   
     # Buy Code
     # open the script in a new terminal window
     subprocess.run(['python', 'EURUSD/trainedmodel/EURUSD_buy.py'])
  
 
 else:
-    Decision_Adjustor_Sell = -0.000025
+    Decision_Adjustor_Sell = -0.000015
     Last_Close_Sell_Helper = Last_Close + Decision_Adjustor_Sell
     if np.any(Pred_Close < Last_Close_Sell_Helper):
-       print("Last_Close_Sell_Helper")
-       print(Last_Close_Sell_Helper)
-       print("Sell")
+       logging.debug("Last_Close_Sell_Helper")
+       logging.debug(Last_Close_Sell_Helper)
+       logging.debug("Sell")
        # sell code here
        # open the script in a new terminal window
        subprocess.run(['python', 'EURUSD/trainedmodel/EURUSD_sell.py'])
 
     else:
-        print("Do nothing")
+        logging.debug("Do nothing")
+        print("DO NOTHING!!!")
         # do nothing code here
         time.sleep(10)

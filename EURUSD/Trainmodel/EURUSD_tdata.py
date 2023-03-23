@@ -48,7 +48,7 @@ for rate in rates:
          # Write the data to the database
          values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
          cursor.execute("INSERT INTO EURUSDTdata (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
-         
+         print(values)
 conn.commit()
 print("SQL complete MT data is up to date")
 

@@ -112,8 +112,14 @@ print("Prediction on trained data:", predictions_norm[0])
 #predictions_actual = scaler.inverse_transform(predictions_norm)
 #print("Prediction on trained data (actual):", predictions_actual[0])
 
-model.save(r"EURUSD/EURUSD.h5")  # save model with timestamp in the file name
-    
+# Generate a timestamp string
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+
+# Define the file path with the timestamp
+file_path = f"EURUSD/EURUSD_{timestamp}.h5"
+
+# Save the model with the timestamp in the file name
+model.save(file_path)    
 
 
 # Define the reward function for reinforcement learning

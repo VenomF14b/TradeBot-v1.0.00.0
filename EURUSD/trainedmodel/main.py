@@ -6,7 +6,7 @@ import subprocess
 #subprocess.call(['python', script_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 # Set the total runtime for the program
-total_runtime = 7200  # seconds
+total_runtime = 21600  # seconds
 
 # Set the interval between script runs
 script_interval = 60  # seconds
