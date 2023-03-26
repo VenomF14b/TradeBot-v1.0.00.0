@@ -12,6 +12,8 @@
     <Name>TradeBot v1.0.00.0</Name>
     <RootNamespace>TradeBot v1.0.00.0</RootNamespace>
     <InterpreterId>Global|PythonCore|3.7</InterpreterId>
+    <TestFramework>Pytest</TestFramework>
+    <PublishUrl>E:\Visual Studio Projects\Published</PublishUrl>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -47,9 +49,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="EURUSD\Trainmodel\EURUSD_trainerai.py" />
-    <Compile Include="EURUSD\trainedmodel\main.py">
+    <Content Include="EURUSD\trainedmodel\main.py">
       <SubType>Code</SubType>
-    </Compile>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.7" />

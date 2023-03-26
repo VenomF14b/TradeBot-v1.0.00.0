@@ -61,9 +61,13 @@ cursor.execute(query)
 for row in cursor:
     profit_data.append(row)
 
+print(profit_data)
+
 # Convert data to numpy array and reverse the order of the rows
 profit_data = np.array(profit_data[::-1])
+print(profit_data)
 profit = profit_data[:, 1]  # Select only the second column
+print(profit)
 
 cursor.close()
 
@@ -83,12 +87,12 @@ for i in range(len(profit) - 1):
         reward.append(1)
 reward.append(0)
 reward = np.array(reward)
-reward = reward[:-1]
+reward = reward[:]
 logging.info("Reward")
 logging.debug(reward)
 
 # Split the data into training and testing sets
-split = int(0.80 * len(X))
+split = int(0.70 * len(X))
 X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 R_train, R_test = reward[:split], reward[split:]
@@ -101,6 +105,10 @@ logging.debug("Y_train")
 logging.debug(Y_train)
 logging.debug("Y_test")
 logging.debug(Y_test)
+logging.debug("R_train")
+logging.debug(R_train)
+logging.debug("R_test")
+logging.debug(R_test)
 
 # Get a list of all the model files in the directory
 #file_list = glob.glob("EURUSD/EURUSD_*.h5")
@@ -113,7 +121,7 @@ logging.debug(Y_test)
 model = load_model("EURUSD/EURUSD.h5")
 
 # Train the model
-model.fit(X_train, Y_train, epochs=5, batch_size=1, sample_weight=R_train,
+model.fit(X_train, Y_train, epochs=10, batch_size=1, sample_weight=R_train,
           validation_data=(X_test, Y_test), validation_steps=len(X_test),
           callbacks=[keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=True, write_images=True)])
 
@@ -123,7 +131,7 @@ model.fit(X_train, Y_train, epochs=5, batch_size=1, sample_weight=R_train,
 #logging.debug("Prediction on trained data:", predictions_norm[0])
 
 #model.save(file_list[0])
-#model.save("EURUSD/EURUSD.h5")
+model.save("EURUSD/EURUSD.h5")
 
 subprocess.run(['python', 'EURUSD/trainedmodel/EURUSD_predict.py'])
 

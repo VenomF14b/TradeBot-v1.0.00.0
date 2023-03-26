@@ -14,9 +14,9 @@ if not mt5.initialize():
 
 # define the symbol and order type
 symbol = "EURUSD"
-lot_size = 0.1
-stop_loss = 0.00015
-take_profit = 0.00015
+lot_size = 1.0
+stop_loss = 0.0001
+take_profit = 0.0001
 magic_number = 123456
 price = mt5.symbol_info_tick(symbol).bid
 type = mt5.ORDER_TYPE_SELL
@@ -50,7 +50,8 @@ if result.retcode != mt5.TRADE_RETCODE_DONE:
     print("message={}".format(result.comment))
 else:
     logging.debug("order executed with order_id={}".format(result.order))
-
+    logging.debug("SELL")
+    print("SELLING")
 # disconnect from MetaTrader 5
 mt5.shutdown()
 logging.debug("SELL")

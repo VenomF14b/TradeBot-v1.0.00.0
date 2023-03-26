@@ -1,11 +1,15 @@
 import pyodbc
 import MetaTrader5 as mt5
-from datetime import datetime
+import datetime as dt
+#from datetime import datetime
+#from datetime import dt
 import pandas as pd
 import subprocess
 
-pd.set_option('display.max_columns', 500) # number of columns to be displayed
-pd.set_option('display.width', 1500)      # max table width to display
+print("Updating WL data")
+
+pd.set_option('display.max_columns', 1000) # number of columns to be displayed
+pd.set_option('display.width', 3000)      # max table width to display
 
 # display data on the MetaTrader 5 package
 print("MetaTrader5 package author: ",mt5.__author__)
@@ -27,8 +31,15 @@ conn = pyodbc.connect('Driver={SQL Server};'
 
  
 # get the number of deals in history
-from_date=datetime(2020,1,1)
-to_date=datetime.now()
+# Calculate start and end times
+#end_time = dt.datetime(2023, 3, 1, 23, 59, 59)  # Set date
+to_date = dt.datetime.now() + dt.timedelta(hours=2)
+from_date = to_date - dt.timedelta(days=14)
+
+print(to_date)
+print(from_date)
+#from_date=datetime(2023,1,1)
+#to_date=datetime.now()
 # get deals for symbols whose names contain "EURUSD" within a specified interval
 deals=mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
 # filter deals with zero profit
@@ -45,7 +56,7 @@ elif len(deals)> 0:
     # display these deals as a table using pandas.DataFrame
     df=pd.DataFrame(list(deals),columns=deals[0]._asdict().keys())
     df['time'] = pd.to_datetime(df['time'], unit='s')
-#    print(df)
+    print(df)
 #print("")
 
 cursor = conn.cursor()
@@ -56,7 +67,7 @@ cursor = conn.cursor()
 # insert deals data into the table
 for deal in deals:
     # execute a SELECT query to check if the position ID exists in the table
-    cursor.execute(f"SELECT position_ID FROM EURUSDWLdata WHERE position_ID = {deal.position_id}")
+    cursor.execute(f"SELECT time FROM EURUSDWLdata WHERE time = {deal.time}")
     result = cursor.fetchone()
     if result is None:
         cursor.execute(f"INSERT INTO EURUSDWLdata VALUES ({deal.ticket}, {deal.order}, '{deal.time}', {deal.type}, {deal.entry}, {deal.magic}, {deal.position_id}, {deal.reason}, {deal.volume}, {deal.price}, {deal.commission}, {deal.swap}, {deal.profit}, {deal.fee}, '{deal.symbol}', '{deal.comment}', '{deal.external_id}')")

@@ -1,9 +1,10 @@
 import MetaTrader5 as mt5
 import numpy as np
 import tensorflow as tf
-import pyodbc
+import tkinter as tk
 import datetime as dt
 import decimal
+import pyodbc
 import subprocess
 import time
 import ctypes
@@ -12,6 +13,8 @@ import sys
 import os
 from tensorflow import keras
 from tensorflow.keras import layers
+from tkinter import messagebox
+from datetime import datetime
 
 print("Establising Connection to MT5, Please wait") # Connect to MT5
 mt5.initialize()
@@ -52,6 +55,80 @@ for rate in rates:
 conn.commit()
 print("SQL complete MT data is up to date")
 
-# call the other script
-subprocess.Popen(["python", "EURUSD\Trainmodel\EURUSD_trainerai.py"])
 
+# Connect to the SQL Express database
+server = 'VENOM-CLIENT\SQLEXPRESS'
+database = 'NSAI'
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=VENOM-CLIENT\SQLEXPRESS;'
+                      'Database=TRADEBOT;'
+                      'Trusted_Connection=yes;')
+
+# Load data from database
+query = f"SELECT TOP 1440 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
+#query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
+data = []
+cursor = conn.cursor()
+cursor.execute(query)
+for row in cursor:
+    data.append(row)
+cursor.close()
+
+# Convert data to numpy array and reverse the order of the rows
+data = np.array(data[::-1])
+X = data[:, 1:5]  # timestamp, [open], high, low, [close]
+
+# Shift the Y values by one time step to predict the next set of datapoints
+Y = np.roll(data[:, 1:5], -1, axis=0)
+print("X")
+print(X)
+print("Y")
+print(Y)
+
+# Split the data into training and testing sets
+split = int(0.70 * len(X))
+X_train, X_test = X[:split], X[split:]
+Y_train, Y_test = Y[:split], Y[split:]
+
+print("X_train")
+print(X_train)
+print("X_test")
+print(X_test)
+print("Y_train")
+print(Y_train)
+print("Y_test")
+print(Y_test)
+
+# Define the AI model
+model = keras.Sequential([
+    layers.Dense(4, activation="relu", input_shape=[len(X[0])]),
+    layers.Dense(8, activation="relu"),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(64, activation="relu"),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(8, activation="relu"),
+    layers.Dense(4)
+])
+
+model.compile(optimizer="adam", loss="mse")
+
+# Train the model
+model.fit(X_train, Y_train, epochs=20, batch_size=1,
+          validation_data=(X_test, Y_test))
+
+# Use the model to predict when to buy or sell
+predictions_norm = model.predict(X)
+print("Prediction on trained data:", predictions_norm[0])
+
+# Generate a timestamp string
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+
+# Define the file path with the timestamp
+file_path = f"EURUSD/EURUSD.h5"
+
+# Save the model with the timestamp in the file name
+model.save(file_path)    
+
+script_path = "EURUSD/trainedmodel/EURUSD_adata.py"
+subprocess.call(['python', script_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
+time.sleep(10)

@@ -275,3 +275,12 @@ subprocess.run(['python', 'EURUSD/trainedmodel/EURUSD_predict.py'])
 
 
 
+# Train the model on new data
+model.fit(X_train_new, Y_train_new, epochs=5, batch_size=1, sample_weight=R_train_new,
+          validation_data=(X_test_new, Y_test_new), validation_steps=len(X_test_new),
+          callbacks=[keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=True, write_images=True)])
+
+# Train the model
+model.fit(X_train, Y_train, epochs=5, batch_size=1, sample_weight=R_train,
+          validation_data=(X_test, Y_test), validation_steps=len(X_test),
+          callbacks=[keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=True, write_images=True)])

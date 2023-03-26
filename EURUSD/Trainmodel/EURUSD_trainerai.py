@@ -25,8 +25,8 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load data from database
-#query = f"SELECT TOP 500 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
-query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
+query = f"SELECT TOP 1440 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
+#query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -100,7 +100,7 @@ model = keras.Sequential([
 model.compile(optimizer="adam", loss="mse")
 
 # Train the model
-model.fit(X_train, Y_train, epochs=100, batch_size=1,
+model.fit(X_train, Y_train, epochs=20, batch_size=1,
           validation_data=(X_test, Y_test))
 
 
@@ -116,10 +116,13 @@ print("Prediction on trained data:", predictions_norm[0])
 timestamp = time.strftime("%Y%m%d-%H%M%S")
 
 # Define the file path with the timestamp
-file_path = f"EURUSD/EURUSD_{timestamp}.h5"
+file_path = f"EURUSD/EURUSD.h5"
 
 # Save the model with the timestamp in the file name
 model.save(file_path)    
+
+script_path = "EURUSD/trainedmodel/EURUSD_adata.py"
+subprocess.call(['python', script_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 # Define the reward function for reinforcement learning

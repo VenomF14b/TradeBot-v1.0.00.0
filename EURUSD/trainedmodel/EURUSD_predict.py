@@ -107,7 +107,7 @@ Last_Close = O_data[0,3]
 
 
 # Do something with the predictions
-Decision_Adjustor_Buy = 0.000015
+Decision_Adjustor_Buy = 0.000000
 Last_Close_Buy_Helper = Last_Close + Decision_Adjustor_Buy
 if np.any(Pred_Close > Last_Close_Buy_Helper):
     logging.debug("Last_Close_Buy_Helper")
@@ -119,7 +119,7 @@ if np.any(Pred_Close > Last_Close_Buy_Helper):
  
 
 else:
-    Decision_Adjustor_Sell = -0.000015
+    Decision_Adjustor_Sell = -0.000000
     Last_Close_Sell_Helper = Last_Close + Decision_Adjustor_Sell
     if np.any(Pred_Close < Last_Close_Sell_Helper):
        logging.debug("Last_Close_Sell_Helper")

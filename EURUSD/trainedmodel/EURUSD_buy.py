@@ -14,9 +14,9 @@ if not mt5.initialize():
 
 # define the symbol and order type
 symbol = "EURUSD"
-lot_size = 0.1
-stop_loss = 0.00015
-take_profit = 0.00015
+lot_size = 1.0
+stop_loss = 0.0001
+take_profit = 0.0001
 magic_number = 123456
 price = mt5.symbol_info_tick(symbol).ask
 type = mt5.ORDER_TYPE_BUY
