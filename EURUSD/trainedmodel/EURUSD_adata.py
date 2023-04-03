@@ -165,12 +165,23 @@ print(to_date)
 print(from_date)
 
 # get deals for symbols whose names contain "EURUSD" within a specified interval
-deals=mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
+#try code_________
+rates = mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
+rates = [deal for deal in deals if deal.profit != 0]
+rates = np.array(deals)
+#Logging
+logging.debug("Pulled historical data")
+print("Pulled historical data")
+print(rates)
+
+#deals=mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
 # filter deals with zero profit
-deals = [deal for deal in deals if deal.profit != 0]
+#deals = [deal for deal in deals if deal.profit != 0]
 # sort the dataframe by ticket in ascending order
-print(deals)
+#print(deals)
 #deals = sorted(deals, key=lambda deal: deal.ticket)
+
+#edit from here trying to use rates rather than deals 
 
 if deals==None:
     print("No deals with group=\"*EURUSD*\", error code={}".format(mt5.last_error()))
