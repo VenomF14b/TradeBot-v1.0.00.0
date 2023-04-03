@@ -26,175 +26,75 @@ from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 from scipy.stats import zscore
 
+
+
 #adata
 adataTimeframe = mt5.TIMEFRAME_M1 #Timeframe selector
 symbol = "EURUSD" #Symbol selector
-passedtime = days=1 #Historical data time adjustor in days
+passedtime = days=7 #Historical data time adjustor in days
 #wldata
-wldataTimeframe = days=14 #Win Loss data time adjustor in days
-#trainerai
-TadataTimeframe = days=30
-traineraiRowselector = 1440
-traineraiEpochs = 20
-traineraiBatchsize = 1
-TaimodelS = "EURUSD/EURUSD.h5" #Model to save
+wldataTimeframe = days=4 #Win Loss data time adjustor in days
 #constantai
 constantaiRowselector = 3 #Number of rows to load from adata in decending order
-wldataRowselector = 3 #Number of rows to load from wldata in decending order
+wldataRowselector = 4 #Number of rows to load from wldata in decending order
 constantaiTrainsplit = 0.70 #Training and testing data split
-constantaiEpochs = 20
+constantaiEpochs = 5
 constantaiBatchsize = 1
 Tmodel = "EURUSD/EURUSD.h5" #Model to load
 TmodelS = "EURUSD/EURUSD.h5" #Model to save
+#Predict
+next_RowTimestamp = 60 # Calculate the timestamp for the next row this value is in unix time
 #Buying
 buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
-buyVolume = 1.0 #The volume of trades to buy
+buyVolume = 0.01 #The volume of trades to buy
 buyStoploss = 0.0001 #Stop loss for buy action
 buyTakeProfit = 0.0001 #Take profit for buy action
 buyMagic = 123456 # can identify
 #Selling
 selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
-sellVolume = 1.0 #The volume of trades to sell
+sellVolume = 0.01 #The volume of trades to sell
 sellStoploss = 0.0001 #Stop loss for sell action
 sellTakeProfit = 0.0001 #Take profit for sell action
 sellMagic = 123456 # can identify
 
-# Ask user if they want to train a new model and overwrite old one
-user_response = messagebox.askyesno("Train New Model", "Do you want to train a new model and overwrite the old one?")
-
-if user_response:
-    # Run the script to train a new model
-    print("Establising Connection to MT5, Please wait") # Connect to MT5
-    mt5.initialize()
-    symbol = symbol
-    timeframe = adataTimeframe
-    print("Connection Successful")
-    print(symbol,"timeframe = " + str(timeframe))
-
-    end_time = dt.datetime.now()    # Calculate start and end times
-    start_time = end_time - dt.timedelta(TadataTimeframe)   
-    print("Data Time Start = " + str(start_time))
-    print("Data Time End = " + str(end_time))
-
-    print("Getting historical data")    # Get historical data
-    rates = mt5.copy_rates_range(symbol, timeframe, start_time, end_time)
-    rates = np.array(rates)
-
-    start_time = end_time   # Update start and end times
-    end_time = dt.datetime.now()
-
-    print("Establishing a connection to the SQL Express database")  # Establish a connection to the SQL Express database
-    conn = pyodbc.connect('Driver={SQL Server};'
-                          'Server=VENOM-CLIENT\SQLEXPRESS;'
-                          'Database=TRADEBOT;'
-                          'Trusted_Connection=yes;')
-    print("Connection established")
-    print("database update in progress please wait...")
-    cursor = conn.cursor()  # Write the data to the database
-    for rate in rates:
-        timestamp = int(rate[0])
-        cursor.execute("SELECT COUNT(*) FROM EURUSDAdata WHERE timestamp = ?", (timestamp,))    # Check if timestamp already exists in the database
-        count = cursor.fetchone()[0]
-        if count == 0:
-             # Write the data to the database
-             values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
-             cursor.execute("INSERT INTO EURUSDAdata (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
-             print(values)
-    conn.commit()
-    print("SQL complete MT data is up to date")
-
-
-    # Connect to the SQL Express database
-    server = 'VENOM-CLIENT\SQLEXPRESS'
-    database = 'NSAI'
-    conn = pyodbc.connect('Driver={SQL Server};'
-                          'Server=VENOM-CLIENT\SQLEXPRESS;'
-                          'Database=TRADEBOT;'
-                          'Trusted_Connection=yes;')
-
-    # Load data from adata
-    query = f"SELECT TOP ({traineraiRowselector}) timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
-    #query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDTdata ORDER BY timestamp DESC"
-    data = []
-    cursor = conn.cursor()
-    cursor.execute(query)
-    for row in cursor:
-        data.append(row)
-    cursor.close()
-
-    # Convert data to numpy array and reverse the order of the rows
-    data = np.array(data[::-1])
-    X = data[:, 1:5]  # timestamp, [open], high, low, [close]
-
-    # Shift the Y values by one time step to predict the next set of datapoints
-    Y = np.roll(data[:, 1:5], -1, axis=0)
-    print("X")
-    print(X)
-    print("Y")
-    print(Y)
-
-    # Split the data into training and testing sets
-    split = int(0.70 * len(X))
-    X_train, X_test = X[:split], X[split:]
-    Y_train, Y_test = Y[:split], Y[split:]
-
-    print("X_train")
-    print(X_train)
-    print("X_test")
-    print(X_test)
-    print("Y_train")
-    print(Y_train)
-    print("Y_test")
-    print(Y_test)
-
-    # Define the AI model
-    model = keras.Sequential([
-        layers.Dense(4, activation="relu", input_shape=[len(X[0])]),
-        layers.Dense(8, activation="relu"),
-        layers.Dense(32, activation="relu"),
-        layers.Dense(64, activation="relu"),
-        layers.Dense(32, activation="relu"),
-        layers.Dense(8, activation="relu"),
-        layers.Dense(4)
-    ])
-
-    model.compile(optimizer="adam", loss="mse")
-
-    # Train the model
-    model.fit(X_train, Y_train, epochs=traineraiEpochs, batch_size=traineraiBatchsize,
-              validation_data=(X_test, Y_test))
-
-    # Save the model
-    model.save(TaimodelS)
-    
 
 # Continue running the script
 logging.basicConfig(filename='EURUSD.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 logging.info('\n''\nUpdating Information')
 
+#**********************************************************************************************************************************
+#Gets the histdata and writes to db *************************************************************************************************
+#**********************************************************************************************************************************
+
 # Connect to MT5
-logging.debug("Establising Connection to MT5, Please wait")
-mt5.initialize()
+if not mt5.initialize():
+    print("initialize() failed, error code =",mt5.last_error())
+    quit()
 symbol = symbol
 timeframe = adataTimeframe
 #Logging
-print(timeframe)
+logging.debug("Establising Connection to MT5, Please wait")
 logging.debug("Connection Successful")
 logging.debug("%s timeframe = %d", symbol, timeframe)
+print("Establising Connection to MT5, Please wait")
 
 # Calculate start and end times
-#end_time = dt.datetime(2023, 3, 1, 23, 59, 59)  # Set date
 end_time = dt.datetime.now()
+end_time += dt.timedelta(hours=3)
 start_time = end_time - dt.timedelta(passedtime)
 #Logging
 logging.debug("Data Time Start = " + str(start_time))
 logging.debug("Data Time End = " + str(end_time))
+print("Data Time Start = " + str(start_time))
+print("Data Time End = " + str(end_time))
+print("Please wait")
 
 # Get historical data
-#Logging
-logging.debug("Getting historical data")
 rates = mt5.copy_rates_range(symbol, timeframe, start_time, end_time)
 rates = np.array(rates)
+#Logging
+logging.debug("Pulled historical data")
+print("Pulled historical data")
 
 # Establish a connection to the SQL Express database
 logging.debug("Establishing a connection to the SQL Express database")
@@ -204,6 +104,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 #Logging
 logging.debug("Connection established")
+print("Connection established")
 
 cursor = conn.cursor()
 for rate in rates:
@@ -221,13 +122,17 @@ for rate in rates:
          #Logging
          logging.debug("Latest Timeframe data")
          logging.debug(values)
+         print("Latest Timeframe data")
+         print(values)
 
 cursor.commit()
 #Logging
 logging.debug("SQL complete MT data is up to date")
+print("SQL complete MT data is up to date")
 
-
-#Gets the WLdata and writes to db ***********************************************************************
+#**********************************************************************************************************************************
+#Gets the WLdata and writes to db *************************************************************************************************
+#**********************************************************************************************************************************
 print("WLdata get code")
 print("Updating WL data")
 
@@ -253,7 +158,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Calculate start and end times
-to_date = dt.datetime.now() + dt.timedelta(hours=2)
+to_date = dt.datetime.now() + dt.timedelta(hours=3)
 from_date = to_date - dt.timedelta(wldataTimeframe)
 
 print(to_date)
@@ -264,6 +169,7 @@ deals=mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
 # filter deals with zero profit
 deals = [deal for deal in deals if deal.profit != 0]
 # sort the dataframe by ticket in ascending order
+print(deals)
 #deals = sorted(deals, key=lambda deal: deal.ticket)
 
 if deals==None:
@@ -275,6 +181,7 @@ elif len(deals)> 0:
     # display these deals as a table using pandas.DataFrame
     df=pd.DataFrame(list(deals),columns=deals[0]._asdict().keys())
     df['time'] = pd.to_datetime(df['time'], unit='s')
+    df['time'] = df['time'].apply(lambda x: int(x.timestamp()))
     print(df)
 #print("")
 
@@ -286,18 +193,37 @@ cursor = conn.cursor()
 # insert deals data into the table
 for deal in deals:
     # execute a SELECT query to check if the position ID exists in the table
-    cursor.execute(f"SELECT time FROM EURUSDWLdata WHERE time = {deal.time}")
+    cursor.execute(f"SELECT * FROM EURUSDAdata WHERE timestamp <= {deal.time + 60} ORDER BY timestamp DESC")
     result = cursor.fetchone()
-    if result is None:
-        cursor.execute(f"INSERT INTO EURUSDWLdata VALUES ({deal.ticket}, {deal.order}, '{deal.time}', {deal.type}, {deal.entry}, {deal.magic}, {deal.position_id}, {deal.reason}, {deal.volume}, {deal.price}, {deal.commission}, {deal.swap}, {deal.profit}, {deal.fee}, '{deal.symbol}', '{deal.comment}', '{deal.external_id}')")
+    
+    if result is not None:
+        # update the existing row with the new data
+        cursor.execute(f"UPDATE EURUSDAdata SET ticket=?, [order]=?, time=?, type=?, entry=?, magic=?, position_id=?, reason=?, volume=?, price=?, commission=?, swap=?, profit=?, fee=?, symbol=?, comment=?, external_id=? WHERE timestamp=?", 
+                       (deal.ticket, deal.order, deal.time, deal.type, deal.entry, deal.magic, deal.position_id, deal.reason, deal.volume, deal.price, deal.commission, deal.swap, deal.profit, deal.fee, deal.symbol, deal.comment, deal.external_id, result[0]))
         print("Deal data updated")
-
-# commit changes and close connection
-conn.commit()
+        # commit changes
+        conn.commit()
+        
+    else:
+        # do nothing if there is no match
+        print("No matching data found")
+        
+    # check for null values in the profit column
+    cursor.execute("SELECT * FROM EURUSDAdata WHERE profit is NULL")
+    null_profit_rows = cursor.fetchall()
+    
+    if null_profit_rows:
+        # update rows with null profit values to 0
+        for row in null_profit_rows:
+            cursor.execute(f"UPDATE EURUSDAdata SET profit=0 WHERE timestamp={row[0]}")
+        print("Profit data updated")
+    # commit changes and close connection
+    conn.commit()
 conn.close()
 
-
-#Constant ai runs itterations to tweak weights*********************************************************************************
+#***********************************************************************************************************************************
+#Constant ai runs itterations to tweak weights**************************************************************************************
+#***********************************************************************************************************************************
 print("Adjusting weights with new data")
 
 # Connect to the SQL Express database
@@ -332,7 +258,7 @@ logging.debug("Y")
 logging.debug(Y)
 
 # Load wldata from database
-query = f"SELECT TOP ({wldataRowselector}) position_ID, profit FROM EURUSDWLdata ORDER BY position_ID DESC"
+query = f"SELECT TOP ({wldataRowselector}) position_ID, profit FROM EURUSDAdata ORDER BY position_ID DESC"
 profit_data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -342,9 +268,16 @@ for row in cursor:
 print(profit_data)
 
 # Convert data to numpy array and reverse the order of the rows
-profit_data = np.array(profit_data[::-1])
+if len(profit_data) == 0:
+    profit_data = np.array([[0, 0]])
+else:
+    profit_data = np.array(profit_data[::-1])
+profit = profit_data[:-1, 1]  # Select only the second column
+
+# Convert data to numpy array and reverse the order of the rows
+#profit_data = np.array(profit_data[::-1])
 print(profit_data)
-profit = profit_data[:, 1]  # Select only the second column
+#profit = profit_data[:-1, 1]  # Select only the second column
 print(profit)
 
 cursor.close()
@@ -400,7 +333,7 @@ model.fit(X_train, Y_train, epochs=constantaiEpochs, batch_size=constantaiBatchs
 model.save(TmodelS)
 
 
-#Predict and by sell conditions****************************************************************************
+#Predict and buy sell conditions****************************************************************************
 print("Predicting with trained data and new data")
 
 model = load_model(Tmodel)
@@ -426,6 +359,8 @@ cursor.close()
 data = np.array(data[::-1])
 X_new = data[:, 1:5]
 O_data = data[:, 1:5] 
+Adata_Actual = data[: 1:5]
+print(Adata_Actual)
 
 #Logging
 logging.debug("Latest data")
@@ -462,6 +397,46 @@ Last_Open = O_data[0,0]
 Last_High = O_data[0,1]
 Last_Low = O_data[0,2]
 Last_Close = O_data[0,3]
+
+# Connect to the SQL Express database
+server = 'VENOM-CLIENT\SQLEXPRESS'
+database = 'NSAI'
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=VENOM-CLIENT\SQLEXPRESS;'
+                      'Database=TRADEBOT;'
+                      'Trusted_Connection=yes;')
+
+# Create a cursor object
+cursor = conn.cursor()
+
+# Get the latest timestamp from the database
+query_latest_timestamp = "SELECT TOP 1 timestamp FROM EURUSDAdata ORDER BY timestamp DESC"
+cursor.execute(query_latest_timestamp)
+latest_timestamp = cursor.fetchone()[0]
+
+
+
+# Calculate the timestamp for the next row
+next_timestamp = latest_timestamp + next_RowTimestamp
+print(next_timestamp)
+print(latest_timestamp)
+print(next_RowTimestamp)
+
+# Define the SQL statement to insert the row with the predicted values
+# Write the data to the database
+values = [int(next_timestamp), float(Pred_Open), float(Pred_High), float(Pred_Low), float(Pred_Close)]
+cursor.execute("INSERT INTO EURUSDPdata (timestamp, pred_open, pred_high, pred_low, pred_close) VALUES (?, ?, ?, ?, ?)", tuple(values))
+print(values)
+
+# Commit the changes to the database
+conn.commit()
+
+# Close the database connection
+conn.close()
+
+
+
+
 
 # Do something with the predictions
 Decision_Adjustor_Buy = buyadataAdjustor
@@ -582,4 +557,4 @@ else:
         print("DO NOTHING!!!")
         # do nothing code here
         mt5.shutdown
-        time.sleep(10)
+time.sleep(10)

@@ -1,6 +1,167 @@
 import time
 import subprocess
+import pyodbc
+import logging
 import MetaTrader5 as mt5
+import datetime as dt
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+#import matplotlib.pyplot as plt
+#import seaborn as sns
+from tensorflow import keras
+from tensorflow.keras import layers
+from tkinter import messagebox
+from sklearn.preprocessing import MinMaxScaler
+
+
+logging.basicConfig(filename='EURUSD.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.info('\n''\nTraining Information')
+
+#adata
+#adataTimeframe = mt5.TIMEFRAME_M1 #Timeframe selector
+symbol = "EURUSD" #Symbol selector
+passedtime = days=60 #Historical data time adjustor in days
+#trainerai
+TadataTimeframe = days=1
+traineraiRowselector = 10080
+traineraiEpochs = 20
+traineraiBatchsize = 1
+TaimodelS = "EURUSD/EURUSD.h5" #Model to save
+
+# Ask user if they want to train a new model and overwrite old one
+user_response = messagebox.askyesno("Train New Model", "Do you want to train a new model and overwrite the old one?")
+
+if user_response:
+    # Run the script to train a new model
+    if not mt5.initialize():
+        print("initialize() failed, error code =",mt5.last_error())
+        quit()
+    symbol = symbol
+    timeframe = mt5.TIMEFRAME_M1
+    #cmd info
+    print("Training the new model") # Training the new model
+    print("Connection to MetaTrader5 successful")
+    print(symbol,"timeframe = " + str(timeframe))
+    #logging info
+    logging.debug("Training the new model") # Training the new model
+    logging.debug("Connection to MetaTrader5 successful")
+    #logging.debug(symbol,"timeframe = " + str(timeframe))
+
+    end_time = dt.datetime.now()    # Calculate start and end times
+    end_time += dt.timedelta(hours=3)
+    start_time = end_time - dt.timedelta(TadataTimeframe)   
+    #cmd info
+    print("Data Time Start = " + str(start_time))
+    print("Data Time End = " + str(end_time))
+
+    print("Getting historical data")    # Get historical data
+    rates = mt5.copy_rates_range(symbol, timeframe, start_time, end_time)
+    rates = np.array(rates)
+
+    start_time = end_time   # Update start and end times
+    end_time = dt.datetime.now()
+
+    conn = pyodbc.connect('Driver={SQL Server};'  # Establish a connection to the SQL Express database
+                          'Server=VENOM-CLIENT\SQLEXPRESS;'
+                          'Database=TRADEBOT;'
+                          'Trusted_Connection=yes;')
+    cursor = conn.cursor()  # Write the data to the database
+    for rate in rates:
+        timestamp = int(rate[0])
+        cursor.execute("SELECT COUNT(*) FROM EURUSDAdata WHERE timestamp = ?", (timestamp,))    # Check if timestamp already exists in the database
+        count = cursor.fetchone()[0]
+        if count == 0:
+             # Write the data to the database
+             values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
+             cursor.execute("INSERT INTO EURUSDAdata (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
+             print(values)
+    conn.commit()
+    #cmd info
+    print("MT data is up to date")
+
+
+    # Connect to the SQL Express database
+    server = 'VENOM-CLIENT\SQLEXPRESS'
+    database = 'NSAI'
+    conn = pyodbc.connect('Driver={SQL Server};'
+                          'Server=VENOM-CLIENT\SQLEXPRESS;'
+                          'Database=TRADEBOT;'
+                          'Trusted_Connection=yes;')
+
+    # Load data from adata
+    query = f"SELECT TOP ({traineraiRowselector}) timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
+    data = []
+    cursor = conn.cursor()
+    cursor.execute(query)
+    for row in cursor:
+        data.append(row)
+    cursor.close()
+
+    # Convert data to numpy array and reverse the order of the rows
+    data = np.array(data[::-1])
+    X = data[:-1, 1:5]  # timestamp, [open], high, low, [close]# remove the last row to avoid the roll-over issue
+    Y = np.roll(data[:, 1:5], -1, axis=0)[:-1]  # remove the last row to avoid roll-over issue and shift the Y values by one time step to predict the next set of datapoints
+    print("X")
+    print(X)
+    print("Y")
+    print(Y)
+
+    # Normalize the data
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    X = scaler.fit_transform(X)
+    Y = scaler.fit_transform(Y)
+
+    print("X Normalized")
+    print(X)
+    print("Y Normalized")
+    print(Y)
+
+    # Reshape the data
+    X = np.reshape(X, (X.shape[0], 1, X.shape[1]))
+    Y = np.reshape(Y, (Y.shape[0], 1, Y.shape[1]))
+
+    print("X Reshape")
+    print(X)
+    print("Y Reshape")
+    print(Y)
+
+    # Split the data into training and testing sets
+    split = int(0.70 * len(X))
+    X_train, X_test = X[:split], X[split:]
+    Y_train, Y_test = Y[:split], Y[split:]
+
+    print("X_train")
+    print(X_train)
+    print("X_test")
+    print(X_test)
+    print("Y_train")
+    print(Y_train)
+    print("Y_test")
+    print(Y_test)
+
+    # Define the AI model
+    model = keras.Sequential([
+        layers.Dense(4, activation="relu", input_shape=[len(X[0])]),
+        layers.Dense(8, activation="relu"),
+        layers.Dense(32, activation="relu"),
+        layers.Dense(64, activation="relu"),
+        layers.Dense(32, activation="relu"),
+        layers.Dense(8, activation="relu"),
+        layers.Dense(4)
+    ])
+
+    model.compile(optimizer="adam", loss="mse")
+
+    # Train the model
+    model.fit(X_train, Y_train, epochs=traineraiEpochs, batch_size=traineraiBatchsize,
+              validation_data=(X_test, Y_test))
+
+    # Save the model
+    model.save(TaimodelS)
+    
+
+# Continue running the script
 
 # initialize the MT5 connection
 if not mt5.initialize():
