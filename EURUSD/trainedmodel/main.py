@@ -18,12 +18,11 @@ from sklearn.preprocessing import MinMaxScaler
 logging.basicConfig(filename='EURUSD.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 logging.info('\n''\nTraining Information')
 
-#adata
+#Update adata
 #adataTimeframe = mt5.TIMEFRAME_M1 #Timeframe selector
 symbol = "EURUSD" #Symbol selector
-passedtime = days=60 #Historical data time adjustor in days
-#trainerai
-TadataTimeframe = days=1
+passedtime = days=7 #Historical data time adjustor in days
+#Trainerai
 traineraiRowselector = 10080
 traineraiEpochs = 20
 traineraiBatchsize = 1
@@ -50,7 +49,7 @@ if user_response:
 
     end_time = dt.datetime.now()    # Calculate start and end times
     end_time += dt.timedelta(hours=3)
-    start_time = end_time - dt.timedelta(TadataTimeframe)   
+    start_time = end_time - dt.timedelta(passedtime)   
     #cmd info
     print("Data Time Start = " + str(start_time))
     print("Data Time End = " + str(end_time))
@@ -118,13 +117,13 @@ if user_response:
     print(Y)
 
     # Reshape the data
-    X = np.reshape(X, (X.shape[0], 1, X.shape[1]))
-    Y = np.reshape(Y, (Y.shape[0], 1, Y.shape[1]))
+    #X = np.reshape(X, (X.shape[0], 1, X.shape[1]))
+    #Y = np.reshape(Y, (Y.shape[0], 1, Y.shape[1]))
 
-    print("X Reshape")
-    print(X)
-    print("Y Reshape")
-    print(Y)
+    #print("X Reshape")
+    #print(X)
+    #print("Y Reshape")
+    #print(Y)
 
     # Split the data into training and testing sets
     split = int(0.70 * len(X))
@@ -152,6 +151,14 @@ if user_response:
     ])
 
     model.compile(optimizer="adam", loss="mse")
+
+    # Print the model summary
+    print(model.summary())
+
+    # Print the model weights and biases
+    for layer in model.layers:
+        weights, biases = layer.get_weights()
+        print(layer.name, weights, biases)
 
     # Train the model
     model.fit(X_train, Y_train, epochs=traineraiEpochs, batch_size=traineraiBatchsize,

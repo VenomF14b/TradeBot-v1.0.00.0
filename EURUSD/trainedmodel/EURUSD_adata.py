@@ -33,7 +33,7 @@ adataTimeframe = mt5.TIMEFRAME_M1 #Timeframe selector
 symbol = "EURUSD" #Symbol selector
 passedtime = days=7 #Historical data time adjustor in days
 #wldata
-wldataTimeframe = days=4 #Win Loss data time adjustor in days
+wldataTimeframe = days=7 #Win Loss data time adjustor in days
 #constantai
 constantaiRowselector = 3 #Number of rows to load from adata in decending order
 wldataRowselector = 4 #Number of rows to load from wldata in decending order
@@ -165,36 +165,14 @@ print(to_date)
 print(from_date)
 
 # get deals for symbols whose names contain "EURUSD" within a specified interval
-#try code_________
-rates = mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
-rates = [deal for deal in deals if deal.profit != 0]
-rates = np.array(deals)
-#Logging
-logging.debug("Pulled historical data")
-print("Pulled historical data")
-print(rates)
-
-#deals=mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
+deals=mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
 # filter deals with zero profit
-#deals = [deal for deal in deals if deal.profit != 0]
-# sort the dataframe by ticket in ascending order
-#print(deals)
-#deals = sorted(deals, key=lambda deal: deal.ticket)
-
-#edit from here trying to use rates rather than deals 
+deals = [deal for deal in deals if deal.profit != 0]
 
 if deals==None:
     print("No deals with group=\"*EURUSD*\", error code={}".format(mt5.last_error()))
 elif len(deals)> 0:
     print("history_deals_get({}, {}, group=\"*EURUSD*\")={}".format(from_date,to_date,len(deals)))
-
-
-    # display these deals as a table using pandas.DataFrame
-    df=pd.DataFrame(list(deals),columns=deals[0]._asdict().keys())
-    df['time'] = pd.to_datetime(df['time'], unit='s')
-    df['time'] = df['time'].apply(lambda x: int(x.timestamp()))
-    print(df)
-#print("")
 
 cursor = conn.cursor()
 
@@ -202,34 +180,19 @@ cursor = conn.cursor()
 #cursor.execute("CREATE TABLE EURUSDWLdata (ticket INT, [order] INT, time VARCHAR(255), type INT, entry FLOAT, magic INT, position_ID INT, reason INT, volume FLOAT, price FLOAT, commission FLOAT, swap FLOAT, profit FLOAT, fee FLOAT, symbol VARCHAR(50), comment VARCHAR(255), external_ID VARCHAR(255))")
 
 # insert deals data into the table
+
 for deal in deals:
     # execute a SELECT query to check if the position ID exists in the table
-    cursor.execute(f"SELECT * FROM EURUSDAdata WHERE timestamp <= {deal.time + 60} ORDER BY timestamp DESC")
+    cursor.execute(f"SELECT time FROM EURUSDWLdata WHERE time = {deal.time}")
     result = cursor.fetchone()
-    
-    if result is not None:
-        # update the existing row with the new data
-        cursor.execute(f"UPDATE EURUSDAdata SET ticket=?, [order]=?, time=?, type=?, entry=?, magic=?, position_id=?, reason=?, volume=?, price=?, commission=?, swap=?, profit=?, fee=?, symbol=?, comment=?, external_id=? WHERE timestamp=?", 
-                       (deal.ticket, deal.order, deal.time, deal.type, deal.entry, deal.magic, deal.position_id, deal.reason, deal.volume, deal.price, deal.commission, deal.swap, deal.profit, deal.fee, deal.symbol, deal.comment, deal.external_id, result[0]))
+    if result is None:
+        # define a tuple with the values to insert
+        values = (deal.ticket, deal.order, deal.time, deal.type, deal.entry, deal.magic, deal.position_id, deal.reason, deal.volume, deal.price, deal.commission, deal.swap, deal.profit, deal.fee, deal.symbol, deal.comment, deal.external_id)
+        # execute the INSERT statement with the tuple
+        cursor.execute("INSERT INTO EURUSDWLdata (ticket, [order], time, type, entry, magic, position_id, reason, volume, price, commission, swap, profit, fee, symbol, comment, external_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
         print("Deal data updated")
-        # commit changes
-        conn.commit()
-        
-    else:
-        # do nothing if there is no match
-        print("No matching data found")
-        
-    # check for null values in the profit column
-    cursor.execute("SELECT * FROM EURUSDAdata WHERE profit is NULL")
-    null_profit_rows = cursor.fetchall()
-    
-    if null_profit_rows:
-        # update rows with null profit values to 0
-        for row in null_profit_rows:
-            cursor.execute(f"UPDATE EURUSDAdata SET profit=0 WHERE timestamp={row[0]}")
-        print("Profit data updated")
-    # commit changes and close connection
-    conn.commit()
+        print(values)
+conn.commit()
 conn.close()
 
 #***********************************************************************************************************************************
@@ -245,53 +208,53 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Database=TRADEBOT;'
                       'Trusted_Connection=yes;')
 
-# Load adata from database
+# Load data from database
 query = f"SELECT TOP ({constantaiRowselector}) timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
-#query = "SELECT timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
-data = []
 cursor = conn.cursor()
 cursor.execute(query)
+data = cursor.fetchall()
 for row in cursor:
-    data.append(row)
+    data.append(list(row))
+print(data)
+
+# Load profit data from EURUSDWLdata
+query = f"SELECT TOP ({wldataRowselector}) time, profit FROM EURUSDWLdata ORDER BY time DESC"
+cursor = conn.cursor()
+cursor.execute(query)
+profit_data = cursor.fetchall()
+for row in cursor:
+    profit_data.append(list(row))
+print(profit_data)
 cursor.close()
+
+# Match profit data to timestamps in EURUSDAdata
+i = 0
+for j, row in enumerate(data):
+    timestamp = row[0]
+    next_timestamp = data[j+1][0] if j < len(data)-1 else timestamp + 60
+    if i < len(profit_data) and profit_data[i][0] >= timestamp and profit_data[i][0] < next_timestamp:
+        profit = profit_data[i][1]
+        i += 1
+    else:
+        profit = 0
+    row_tuple = tuple(row) + (profit,)
+    data[j] = list(row_tuple)
+    data[j].append(profit)
+    print(data[j])
 
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
+scaler = MinMaxScaler(feature_range=(0, 1))
+data = scaler.fit_transform(data)
 X = data[:, 1:5]  # timestamp, [open], high, low, [close]
-
-
-# Shift the Y values by one time step to predict the next set of datapoints
-Y = np.roll(data[:, 1:5], -1, axis=0)
+Y = np.roll(data[:, 1:5], -1, axis=0) # Shift the Y values by one time step to predict the next set of datapoints
+profit = data[:, 5:6]
 #Logging
 logging.debug("X")
 logging.debug(X)
 logging.debug("Y")
 logging.debug(Y)
-
-# Load wldata from database
-query = f"SELECT TOP ({wldataRowselector}) position_ID, profit FROM EURUSDAdata ORDER BY position_ID DESC"
-profit_data = []
-cursor = conn.cursor()
-cursor.execute(query)
-for row in cursor:
-    profit_data.append(row)
-
-print(profit_data)
-
-# Convert data to numpy array and reverse the order of the rows
-if len(profit_data) == 0:
-    profit_data = np.array([[0, 0]])
-else:
-    profit_data = np.array(profit_data[::-1])
-profit = profit_data[:-1, 1]  # Select only the second column
-
-# Convert data to numpy array and reverse the order of the rows
-#profit_data = np.array(profit_data[::-1])
-print(profit_data)
-#profit = profit_data[:-1, 1]  # Select only the second column
 print(profit)
-
-cursor.close()
 #Logging
 logging.debug("X")
 logging.debug(X)
@@ -319,7 +282,6 @@ split = int((constantaiTrainsplit) * len(X))
 X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 R_train, R_test = reward[:split], reward[split:]
-
 #Logging
 logging.debug("X_train")
 logging.debug(X_train)
