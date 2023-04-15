@@ -35,8 +35,8 @@ passedtime = days=7 #Historical data time adjustor in days
 #wldata
 wldataTimeframe = days=7 #Win Loss data time adjustor in days
 #constantai
-constantaiRowselector = 3 #Number of rows to load from adata in decending order
-wldataRowselector = 4 #Number of rows to load from wldata in decending order
+constantaiRowselector = 5 #Number of rows to load from adata in decending order
+wldataRowselector = 25 #Number of rows to load from wldata in decending order
 constantaiTrainsplit = 0.70 #Training and testing data split
 constantaiEpochs = 5
 constantaiBatchsize = 1
@@ -72,29 +72,24 @@ if not mt5.initialize():
     quit()
 symbol = symbol
 timeframe = adataTimeframe
-#Logging
-logging.debug("Establising Connection to MT5, Please wait")
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 logging.debug("Connection Successful")
 logging.debug("%s timeframe = %d", symbol, timeframe)
-print("Establising Connection to MT5, Please wait")
 
 # Calculate start and end times
 end_time = dt.datetime.now()
 end_time += dt.timedelta(hours=3)
 start_time = end_time - dt.timedelta(passedtime)
-#Logging
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 logging.debug("Data Time Start = " + str(start_time))
 logging.debug("Data Time End = " + str(end_time))
-print("Data Time Start = " + str(start_time))
-print("Data Time End = " + str(end_time))
-print("Please wait")
 
 # Get historical data
 rates = mt5.copy_rates_range(symbol, timeframe, start_time, end_time)
 rates = np.array(rates)
-#Logging
-logging.debug("Pulled historical data")
-print("Pulled historical data")
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Rates data raw MT5")
+logging.debug(rates)
 
 # Establish a connection to the SQL Express database
 logging.debug("Establishing a connection to the SQL Express database")
@@ -102,9 +97,6 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Server=VENOM-CLIENT\SQLEXPRESS;'
                       'Database=TRADEBOT;'
                       'Trusted_Connection=yes;')
-#Logging
-logging.debug("Connection established")
-print("Connection established")
 
 cursor = conn.cursor()
 for rate in rates:
@@ -112,30 +104,21 @@ for rate in rates:
 
     # Check if timestamp already exists in the database
     cursor.execute("SELECT COUNT(*) FROM EURUSDAdata WHERE timestamp = ?", (timestamp,))
-    #cursor.execute("SELECT COUNT(*) FROM (SELECT TOP 500 * FROM EURUSDAdata ORDER BY timestamp DESC) AS latest WHERE timestamp = ?", (timestamp,))
     count = cursor.fetchone()[0]
     if count == 0:
-
          # Write the data to the database
          values = [timestamp, float(rate[1]), float(rate[2]), float(rate[3]), float(rate[4]), float(rate[5]), float(rate[6]), float(rate[7])]
          cursor.execute("INSERT INTO EURUSDAdata (timestamp, [open], high, low, [close], tick_volume, spread, real_volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
-         #Logging
-         logging.debug("Latest Timeframe data")
+         #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         logging.debug("Latest written Timeframe data")
          logging.debug(values)
-         print("Latest Timeframe data")
-         print(values)
-
+         logging.debug("Rates Updated")
 cursor.commit()
-#Logging
-logging.debug("SQL complete MT data is up to date")
-print("SQL complete MT data is up to date")
+
 
 #**********************************************************************************************************************************
 #Gets the WLdata and writes to db *************************************************************************************************
 #**********************************************************************************************************************************
-print("WLdata get code")
-print("Updating WL data")
-
 pd.set_option('display.max_columns', 1000) # number of columns to be displayed
 pd.set_option('display.width', 3000)      # max table width to display
 
@@ -160,9 +143,11 @@ conn = pyodbc.connect('Driver={SQL Server};'
 # Calculate start and end times
 to_date = dt.datetime.now() + dt.timedelta(hours=3)
 from_date = to_date - dt.timedelta(wldataTimeframe)
-
-print(to_date)
-print(from_date)
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.info("To date")
+logging.info(to_date)
+logging.info("From date:")
+logging.info(from_date)
 
 # get deals for symbols whose names contain "EURUSD" within a specified interval
 deals=mt5.history_deals_get(from_date, to_date, group="*EURUSD*")
@@ -190,15 +175,16 @@ for deal in deals:
         values = (deal.ticket, deal.order, deal.time, deal.type, deal.entry, deal.magic, deal.position_id, deal.reason, deal.volume, deal.price, deal.commission, deal.swap, deal.profit, deal.fee, deal.symbol, deal.comment, deal.external_id)
         # execute the INSERT statement with the tuple
         cursor.execute("INSERT INTO EURUSDWLdata (ticket, [order], time, type, entry, magic, position_id, reason, volume, price, commission, swap, profit, fee, symbol, comment, external_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", tuple(values))
-        print("Deal data updated")
-        print(values)
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        logging.debug(values)
+logging.debug("Deal data updated")
 conn.commit()
 conn.close()
 
 #***********************************************************************************************************************************
 #Constant ai runs itterations to tweak weights**************************************************************************************
 #***********************************************************************************************************************************
-print("Adjusting weights with new data")
+print("Adjusting model")
 
 # Connect to the SQL Express database
 server = 'VENOM-CLIENT\SQLEXPRESS'
@@ -215,7 +201,9 @@ cursor.execute(query)
 data = cursor.fetchall()
 for row in cursor:
     data.append(list(row))
-print(data)
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Rates data raw")
+logging.debug(data)
 
 # Load profit data from EURUSDWLdata
 query = f"SELECT TOP ({wldataRowselector}) time, profit FROM EURUSDWLdata ORDER BY time DESC"
@@ -224,7 +212,9 @@ cursor.execute(query)
 profit_data = cursor.fetchall()
 for row in cursor:
     profit_data.append(list(row))
-print(profit_data)
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Profit data raw")
+logging.debug(profit_data)
 cursor.close()
 
 # Match profit data to timestamps in EURUSDAdata
@@ -240,7 +230,9 @@ for j, row in enumerate(data):
     row_tuple = tuple(row) + (profit,)
     data[j] = list(row_tuple)
     data[j].append(profit)
-    print(data[j])
+    #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    logging.debug("data[j]")
+    logging.debug(data[j])
 
 # Convert data to numpy array and reverse the order of the rows
 data = np.array(data[::-1])
@@ -249,18 +241,12 @@ data = scaler.fit_transform(data)
 X = data[:, 1:5]  # timestamp, [open], high, low, [close]
 Y = np.roll(data[:, 1:5], -1, axis=0) # Shift the Y values by one time step to predict the next set of datapoints
 profit = data[:, 5:6]
-#Logging
-logging.debug("X")
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Input data <X>")
 logging.debug(X)
-logging.debug("Y")
+logging.debug("Output data <Y>")
 logging.debug(Y)
-print(profit)
-#Logging
-logging.debug("X")
-logging.debug(X)
-logging.debug("Y")
-logging.debug(Y)
-logging.debug("Profit")
+logging.debug("Profit data <profit>")
 logging.debug(profit)
 
 # Calculate the reward based on the profit
@@ -273,8 +259,8 @@ for i in range(len(profit) - 1):
 reward.append(0)
 reward = np.array(reward)
 reward = reward[:]
-#Logging
-logging.info("Reward")
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.info("Reward from profit data in np array")
 logging.debug(reward)
 
 # Split the data into training and testing sets
@@ -282,18 +268,18 @@ split = int((constantaiTrainsplit) * len(X))
 X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 R_train, R_test = reward[:split], reward[split:]
-#Logging
-logging.debug("X_train")
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Input training data <X_train>")
 logging.debug(X_train)
-logging.debug("X_test")
+logging.debug("Input testing data <X_test>")
 logging.debug(X_test)
-logging.debug("Y_train")
+logging.debug("Output training data <Y_train>")
 logging.debug(Y_train)
-logging.debug("Y_test")
+logging.debug("Output testing data <Y_test>")
 logging.debug(Y_test)
-logging.debug("R_train")
+logging.debug("Reward training data <R_train>")
 logging.debug(R_train)
-logging.debug("R_test")
+logging.debug("Reward testing data <R_test>")
 logging.debug(R_test)
 
 model = load_model(Tmodel)
@@ -333,15 +319,16 @@ data = np.array(data[::-1])
 X_new = data[:, 1:5]
 O_data = data[:, 1:5] 
 Adata_Actual = data[: 1:5]
-print(Adata_Actual)
-
-#Logging
-logging.debug("Latest data")
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Latest Actual rates data")
+logging.debug(Adata_Actual)
+logging.debug("Latest rates data")
 logging.debug(X_new)
 
 next_timestamp = data[-1, 0] + 60
 
-#Logging
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("PRediction time stamp")
 logging.debug(next_timestamp)
 
 # Create new input data X_new
@@ -355,12 +342,13 @@ X_latest = np.array([[
 
 X_latest = X_latest[:, 1:] # Select all rows and columns 1 to 4 (inclusive
 
-#Logging
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Data before the prediction")
 logging.debug(X_latest)
 
 # Make a prediction on the new data point
 Y_pred = model.predict(X_latest)
-#Logging
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 logging.debug("Prediction: %s", str(Y_pred[0]))
 Pred_Open = Y_pred[0,0]
 Pred_High = Y_pred[0,1]
@@ -391,41 +379,40 @@ latest_timestamp = cursor.fetchone()[0]
 
 # Calculate the timestamp for the next row
 next_timestamp = latest_timestamp + next_RowTimestamp
-print(next_timestamp)
-print(latest_timestamp)
-print(next_RowTimestamp)
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Prediction data timestamp calculation")
+logging.debug("Next timestamp")
+logging.debug(next_timestamp)
+logging.debug("Latest timestamp")
+logging.debug(latest_timestamp)
+logging.debug("Next row timestamp")
+logging.debug(next_RowTimestamp)
 
 # Define the SQL statement to insert the row with the predicted values
 # Write the data to the database
 values = [int(next_timestamp), float(Pred_Open), float(Pred_High), float(Pred_Low), float(Pred_Close)]
 cursor.execute("INSERT INTO EURUSDPdata (timestamp, pred_open, pred_high, pred_low, pred_close) VALUES (?, ?, ?, ?, ?)", tuple(values))
-print(values)
+#logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+logging.debug("Prediction values witten to EURUSDPdata")
+logging.debug(values)
 
-# Commit the changes to the database
 conn.commit()
-
-# Close the database connection
 conn.close()
-
-
-
-
 
 # Do something with the predictions
 Decision_Adjustor_Buy = buyadataAdjustor
 Last_Close_Buy_Helper = Last_Close + Decision_Adjustor_Buy
 if np.any(Pred_Close > Last_Close_Buy_Helper):
-    #Logging
+    #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     logging.debug("Last_Close_Buy_Helper")
     logging.debug(Last_Close_Buy_Helper)
-    logging.debug("Buy")   
     # Buy Code
 
     # connect to MetaTrader 5
     if not mt5.initialize():
-        #Logging
-        logging.error("initialize() failed")
         mt5.shutdown()
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        logging.error("initialize() failed")
 
     # define the symbol and order type
     symbol = symbol
@@ -437,6 +424,7 @@ if np.any(Pred_Close > Last_Close_Buy_Helper):
     type = mt5.ORDER_TYPE_BUY
 
     # Do something with the price
+    #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     logging.debug(f"The latest price for {symbol} is {price}.")
         # create a request for a new order
     request = {
@@ -458,14 +446,14 @@ if np.any(Pred_Close > Last_Close_Buy_Helper):
 
     # check if the order was executed successfully
     if result.retcode != mt5.TRADE_RETCODE_DONE:
-        #Logging
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         logging.error("order failed with retcode={}".format(result.retcode))
         logging.error("message={}".format(result.comment))
         print("BUY ORDER FAILED")
         print("order failed with retcode={}".format(result.retcode))
         print("message={}".format(result.comment))
     else:
-        #Logging
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         logging.debug("order executed with order_id={}".format(result.order))
         logging.debug("BUY")
         print("BUYING")
@@ -473,15 +461,15 @@ else:
     Decision_Adjustor_Sell = selladataAdjustor
     Last_Close_Sell_Helper = Last_Close + Decision_Adjustor_Sell
     if np.any(Pred_Close < Last_Close_Sell_Helper):
-        #Logging
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
        logging.debug("Last_Close_Sell_Helper")
        logging.debug(Last_Close_Sell_Helper)
-       logging.debug("Sell")
        # sell code here
        # connect to MetaTrader 5
        if not mt5.initialize():
-           logging.debug("initialize() failed")
            mt5.shutdown()
+           #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+           logging.debug("initialize() failed")
 
        # define the symbol and order type
        symbol = symbol
@@ -493,6 +481,7 @@ else:
        type = mt5.ORDER_TYPE_SELL
 
        # Do something with the price
+       #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
        logging.debug(f"The latest price for {symbol} is {price}.")
        # create a request for a new order
        request = {
@@ -512,20 +501,20 @@ else:
        result = mt5.order_send(request)
         # check if the order was executed successfully
        if result.retcode != mt5.TRADE_RETCODE_DONE:
-           #Logging
+           #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
            logging.debug("order failed with retcode={}".format(result.retcode))
            logging.debug("message={}".format(result.comment))
            print("SELL ORDER FAILED")
            print("order failed with retcode={}".format(result.retcode))
            print("message={}".format(result.comment))
        else:
-           #Logging
+           #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
            logging.debug("order executed with order_id={}".format(result.order))
            logging.debug("SELL")
            print("SELLING")
 
     else:
-        #Logging
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         logging.debug("Do nothing")
         print("DO NOTHING!!!")
         # do nothing code here

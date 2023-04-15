@@ -18,18 +18,56 @@ from sklearn.preprocessing import MinMaxScaler
 logging.basicConfig(filename='EURUSD.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 logging.info('\n''\nTraining Information')
 
-#Update adata
-#adataTimeframe = mt5.TIMEFRAME_M1 #Timeframe selector
-symbol = "EURUSD" #Symbol selector
-passedtime = days=7 #Historical data time adjustor in days
-#Trainerai
-traineraiRowselector = 10080
-traineraiEpochs = 20
-traineraiBatchsize = 1
-TaimodelS = "EURUSD/EURUSD.h5" #Model to save
+
+
+
+
 
 # Ask user if they want to train a new model and overwrite old one
 user_response = messagebox.askyesno("Train New Model", "Do you want to train a new model and overwrite the old one?")
+
+userIn_passedtime = input("Data request range in days:")
+if userIn_passedtime == "":
+    userIn_passedtime = 7
+    print(userIn_passedtime)
+try:
+    userIn_passedtime = int(userIn_passedtime)
+except ValueError:
+    print("Invalid input! Please enter an integer value.")
+userIn_traineraiRowselector = input("Data size number of rows: ")
+if userIn_traineraiRowselector == "":
+    userIn_traineraiRowselector = 10080
+    print(userIn_traineraiRowselector)
+try:
+    userIn_traineraiRowselector = int(userIn_traineraiRowselector)
+except ValueError:
+    print("Invalid input! Please enter an integer value.")
+userIn_traineraiEpochs = input("Training Epochs size: ")
+if userIn_traineraiEpochs == "":
+    userIn_traineraiEpochs = 100
+    print(userIn_traineraiEpochs)
+try:
+    userIn_traineraiEpochs = int(userIn_traineraiEpochs)
+except ValueError:
+    print("Invalid input! Please enter an integer value.")
+userIn_traineraiBatchsize = input("Training batch size: ")
+if userIn_traineraiBatchsize == "":
+    userIn_traineraiBatchsize = 5
+    print(userIn_traineraiBatchsize)
+try:
+    userIn_traineraiBatchsize = int(userIn_traineraiBatchsize)
+except ValueError:
+    print("Invalid input! Please enter an integer value.")
+
+#Update adata
+symbol = "EURUSD" #Symbol selector
+passedtime = days=7 #Historical data time adjustor in days
+#Trainerai
+traineraiRowselector = userIn_traineraiRowselector
+traineraiEpochs = userIn_traineraiEpochs
+traineraiBatchsize = userIn_traineraiBatchsize
+TaimodelS = "EURUSD/EURUSD.h5" #Model to save
+
 
 if user_response:
     # Run the script to train a new model
@@ -89,12 +127,30 @@ if user_response:
                           'Trusted_Connection=yes;')
 
     # Load data from adata
+    #query = f"SELECT TOP ({traineraiRowselector}) timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
+    #data = []
+    #cursor = conn.cursor()
+    #cursor.execute(query)
+    #for row in cursor:
+    #    data.append(row)
+    #cursor.close()
+
     query = f"SELECT TOP ({traineraiRowselector}) timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
     data = []
     cursor = conn.cursor()
     cursor.execute(query)
     for row in cursor:
-        data.append(row)
+        converted_row = []
+        for item in row:
+            if isinstance(item, str):
+                try:
+                    converted_item = int(item)
+                except ValueError:
+                    converted_item = item
+            else:
+                converted_item = item
+            converted_row.append(converted_item)
+        data.append(converted_row)
     cursor.close()
 
     # Convert data to numpy array and reverse the order of the rows
@@ -142,11 +198,13 @@ if user_response:
     # Define the AI model
     model = keras.Sequential([
         layers.Dense(4, activation="relu", input_shape=[len(X[0])]),
-        layers.Dense(8, activation="relu"),
-        layers.Dense(32, activation="relu"),
-        layers.Dense(64, activation="relu"),
-        layers.Dense(32, activation="relu"),
-        layers.Dense(8, activation="relu"),
+        layers.Dense(12, activation="relu"),
+        layers.Dense(36, activation="relu"),
+        layers.Dense(108, activation="relu"),
+        layers.Dense(648, activation="relu"),
+        layers.Dense(108, activation="relu"),
+        layers.Dense(36, activation="relu"),
+        layers.Dense(12, activation="relu"),
         layers.Dense(4)
     ])
 
