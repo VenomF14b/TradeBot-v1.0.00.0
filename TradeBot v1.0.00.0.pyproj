@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>71038142-3492-40ab-abc4-a38f31bd45e2</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>EURUSD\trainedmodel\main.py</StartupFile>
+    <StartupFile>EURUSD\EURUSDmain.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,29 +27,14 @@
     <Compile Include="EURUSD\testmodel.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="EURUSD\trainedmodel\EURUSD_wldata.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="EURUSD\Trainmodel\EURUSD_tdata.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="EURUSD\trainedmodel\EURUSD_constantai.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="EURUSD\trainedmodel\EURUSD_buy.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="EURUSD\trainedmodel\EURUSD_sell.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="EURUSD\trainedmodel\EURUSD_predict.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="EURUSD\trainedmodel\EURUSD_adata.py">
+    <Compile Include="EURUSD\EURUSD_adata.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="EURUSD\Trainmodel\EURUSD_trainerai.py" />
-    <Content Include="EURUSD\trainedmodel\main.py">
+    <Content Include="EURUSD\EURUSDmain.py">
       <SubType>Code</SubType>
     </Content>
   </ItemGroup>
