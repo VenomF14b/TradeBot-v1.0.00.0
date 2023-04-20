@@ -52,13 +52,17 @@ TmodelS = "EURUSD/EURUSD.h5" #Model to save
 #Predict
 next_RowTimestamp = 60 # Calculate the timestamp for the next row this value is in unix time
 #Buying
-buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
+Close_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
+Low_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
+High_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
 buyVolume = float(Constantai_params.get('buyVolume', '0.01')) #The volume of trades to buy
 buyStoploss = float(Constantai_params.get('buyStoploss', '0.0001')) #Stop loss for buy action
 buyTakeProfit = float(Constantai_params.get('buyTakeProfit', '0.0001')) #Take profit for buy action
 buyMagic = int(Constantai_params.get('buyMagic', '123456')) # can identify
 #Selling
-selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
+Close_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
+Low_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
+High_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
 sellVolume = float(Constantai_params.get('sellVolume', '0.01')) #The volume of trades to sell
 sellStoploss = float(Constantai_params.get('sellStoploss', '0.0001')) #Stop loss for sell action
 sellTakeProfit = float(Constantai_params.get('sellTakeProfit', '0.0001')) #Take profit for sell action
@@ -463,10 +467,10 @@ X_train, X_test = X[:split], X[split:]
 Y_train, Y_test = Y[:split], Y[split:]
 
 R_train, R_test = reward[:split], reward[split:]
-#R_train = np.sign(R_train)  # Convert to -1, 0, or 1
-#R_train = (R_train + 1) % 2  # Convert to 0 or 1
-#R_test = np.sign(R_test)  # Convert to -1, 0, or 1
-#R_test = (R_test + 1) % 2  # Convert to 0 or 1
+R_train = np.sign(R_train)  # Convert to -1, 0, or 1
+R_train = (R_train + 1) % 2  # Convert to 0 or 1
+R_test = np.sign(R_test)  # Convert to -1, 0, or 1
+R_test = (R_test + 1) % 2  # Convert to 0 or 1
 
 R0_train, R0_test = reward0[:split], reward0[split:]
 R0_train = np.sign(R0_train)  # Convert to -1, 0, or 1
@@ -644,9 +648,13 @@ conn.close()
 
 
 # Do something with the predictions
-Decision_Adjustor_Buy = buyadataAdjustor
-Last_Close_Buy_Helper = Last_Close + Decision_Adjustor_Buy
-if np.any(Pred_Close > Last_Close_Buy_Helper):
+Close_Decision_Adjustor_Buy = Close_buyadataAdjustor
+Low_Decision_Adjustor_Buy = Low_buyadataAdjustor
+High_Decision_Adjustor_Buy = High_buyadataAdjustor
+Last_Close_Buy_Helper = Last_Close + Close_Decision_Adjustor_Buy
+Last_Low_Buy_Helper = Last_Low + Low_Decision_Adjustor_Buy
+Last_High_Buy_Helper = Last_High + High_Decision_Adjustor_Buy
+if np.any(Pred_Close >= Last_Close_Buy_Helper) and (Pred_Low >= Last_Low_Buy_Helper) or (Pred_High >= Last_High_Buy_Helper) and (Pred_Close >= Last_Close_Buy_Helper):
     #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     logging.debug("Last_Close_Buy_Helper")
     logging.debug(Last_Close_Buy_Helper)
@@ -666,96 +674,122 @@ if np.any(Pred_Close > Last_Close_Buy_Helper):
     magic_number = buyMagic
     price = mt5.symbol_info_tick(symbol).ask
     type = mt5.ORDER_TYPE_BUY
-
-    # Do something with the price
-    #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    logging.debug(f"The latest price for {symbol} is {price}.")
+    
+    # set the maximum number of attempts to execute the order
+    max_attempts = 3
+    attempts = 0
+    order_executed = False
+    
+    while not order_executed and attempts < max_attempts:
+        
         # create a request for a new order
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": lot_size,
-        "type": type,
-        "price": price,
-        "sl": price - stop_loss,
-        "tp": price + take_profit,
-        "magic": magic_number,
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
-    }
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot_size,
+            "type": type,
+            "price": mt5.symbol_info_tick(symbol).ask,
+            "sl": price - stop_loss,
+            "tp": price + take_profit,
+            "magic": magic_number,
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
 
-    # send the order request
-    #result = mt5.orders_send(request)
-    result = mt5.order_send(request)
+        # send the order request
+        result = mt5.order_send(request)
 
-    # check if the order was executed successfully
-    if result.retcode != mt5.TRADE_RETCODE_DONE:
-        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        logging.error("order failed with retcode={}".format(result.retcode))
-        logging.error("message={}".format(result.comment))
-        print("BUY ORDER FAILED")
-        print("order failed with retcode={}".format(result.retcode))
-        print("message={}".format(result.comment))
-    else:
-        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        logging.debug("order executed with order_id={}".format(result.order))
-        logging.debug("BUY")
-        print("BUYING")
-else:
-    Decision_Adjustor_Sell = selladataAdjustor
-    Last_Close_Sell_Helper = Last_Close + Decision_Adjustor_Sell
-    if np.any(Pred_Close < Last_Close_Sell_Helper):
-        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-       logging.debug("Last_Close_Sell_Helper")
-       logging.debug(Last_Close_Sell_Helper)
-       # sell code here
-       # connect to MetaTrader 5
-       if not mt5.initialize():
-           mt5.shutdown()
-           #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-           logging.debug("initialize() failed")
-
-       # define the symbol and order type
-       symbol = symbol
-       lot_size = sellVolume
-       stop_loss = sellStoploss
-       take_profit = sellTakeProfit
-       magic_number = sellMagic
-       price = mt5.symbol_info_tick(symbol).bid
-       type = mt5.ORDER_TYPE_SELL
-
-       # Do something with the price
-       #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-       logging.debug(f"The latest price for {symbol} is {price}.")
-       # create a request for a new order
-       request = {
-           "action": mt5.TRADE_ACTION_DEAL,
-           "symbol": symbol,
-           "volume": lot_size,
-           "type": type,
-           "price": price,
-           "sl": price + stop_loss,
-           "tp": price - take_profit,
-           "magic": magic_number,
-           "type_time": mt5.ORDER_TIME_GTC,
-           "type_filling": mt5.ORDER_FILLING_IOC,
-       }
-
-       # send the order request
-       result = mt5.order_send(request)
         # check if the order was executed successfully
-       if result.retcode != mt5.TRADE_RETCODE_DONE:
-           #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-           logging.debug("order failed with retcode={}".format(result.retcode))
-           logging.debug("message={}".format(result.comment))
-           print("SELL ORDER FAILED")
-           print("order failed with retcode={}".format(result.retcode))
-           print("message={}".format(result.comment))
-       else:
-           #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-           logging.debug("order executed with order_id={}".format(result.order))
-           logging.debug("SELL")
-           print("SELLING")
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            logging.debug("order executed with order_id={}".format(result.order))
+            logging.debug("BUY")
+            print("BUYING")
+            order_executed = True
+        else:
+            #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            logging.error("order failed with retcode={}".format(result.retcode))
+            logging.error("message={}".format(result.comment))
+            print("BUY ORDER FAILED")
+            print("order failed with retcode={}".format(result.retcode))
+            print("message={}".format(result.comment))
+            attempts += 1
+
+    # check if the order was not executed after the maximum number of attempts
+    if not order_executed:
+        logging.error("maximum number of attempts to execute the order reached")
+        print("maximum number of attempts to execute the order reached")
+
+else:
+    Close_Decision_Adjustor_Sell = Close_selladataAdjustor
+    Low_Decision_Adjustor_Sell = Low_selladataAdjustor
+    High_Decision_Adjustor_Sell = High_selladataAdjustor
+    Last_Close_Sell_Helper = Last_Close + Close_Decision_Adjustor_Sell
+    Last_Low_Sell_Helper = Last_Low + Low_Decision_Adjustor_Sell
+    Last_High_Sell_Helper = Last_High + High_Decision_Adjustor_Sell
+    if np.any(Pred_Close <= Last_Close_Sell_Helper) and (Pred_Low <= Last_Low_Sell_Helper) or (Pred_High <= Last_High_Sell_Helper) and (Pred_Close <= Last_Close_Sell_Helper):
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        logging.debug("Last_Close_Sell_Helper")
+        logging.debug(Last_Close_Sell_Helper)
+        # sell code here
+        # connect to MetaTrader 5
+        if not mt5.initialize():
+            mt5.shutdown()
+            #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            logging.debug("initialize() failed")
+
+        # define the symbol and order type
+        symbol = symbol
+        lot_size = sellVolume
+        stop_loss = sellStoploss
+        take_profit = sellTakeProfit
+        magic_number = sellMagic
+        price = mt5.symbol_info_tick(symbol).bid
+        type = mt5.ORDER_TYPE_SELL
+
+        # set the maximum number of attempts to execute the order
+        max_attempts = 3
+        attempts = 0
+        order_executed = False
+    
+        while not order_executed and attempts < max_attempts:
+            # create a request for a new order
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": lot_size,
+                "type": type,
+                "price": mt5.symbol_info_tick(symbol).bid,
+                "sl": price + stop_loss,
+                "tp": price - take_profit,
+                "magic": magic_number,
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": mt5.ORDER_FILLING_IOC,
+            }
+
+            # send the order request
+            result = mt5.order_send(request)
+            
+            # check if the order was executed successfully
+            if result.retcode == mt5.TRADE_RETCODE_DONE:
+                #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                logging.debug("order executed with order_id={}".format(result.order))
+                logging.debug("SELL")
+                print("SELLING")
+                order_executed = True    
+            else:
+                #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                logging.debug("order failed with retcode={}".format(result.retcode))
+                logging.debug("message={}".format(result.comment))
+                print("SELL ORDER FAILED")
+                print("order failed with retcode={}".format(result.retcode))
+                print("message={}".format(result.comment))
+                attempts += 1
+
+        # check if the order was not executed after the maximum number of attempts
+        if not order_executed:
+            logging.error("maximum number of attempts to execute the order reached")
+            print("maximum number of attempts to execute the order reached")        
 
     else:
         #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
