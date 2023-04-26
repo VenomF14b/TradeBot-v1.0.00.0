@@ -1,0 +1,60 @@
+*runtime to user input 
+
+
+
+********************Program dependancies and libs
+Python 3.7
+db current sqlexpress (look at sqlite3 built into python?)
+import MetaTrader5
+import numpy
+import tensorflow
+import pandas
+import datetime
+import tkinter
+import alpaca_trade_api
+import sklearn
+import glob
+import pyodbc
+import decimal
+import subprocess
+import time
+import ctypes
+import signal
+import sys
+import os
+import logging
+import configparser
+from tensorflow import keras
+from tensorflow.keras import layers
+from datetime import datetime, timezone
+from tkinter import messagebox
+from datetime import datetime
+from keras.models import load_model
+from sklearn.preprocessing import MinMaxScaler
+from scipy.stats import zscore
+
+
+
+
+*GUI
+	-make gui
+		-gui needs to allow userinput, statistics on training and constantai data, show runtime time, show profit loss results
+	-userinput gui
+		-all data is manual input except:
+			?
+			?
+			?
+	-statistics
+		-display training data and statistic data 
+		-show runtime, profit loss data for the session
+		-show start balance for the session
+
+*main
+	-trend to implement if latest > last and latest < last elif run the pred close to check
+	-calculate the win loss for the session
+		-user input should be gui and complete 
+	-logging data enable/disable complete logging data
+	-cmd info data enable disable complete cmd data
+	-find a way to check when the next timeframe is avalable then execute adata.py (not every 60 seconds as is)
+	
+*create a setup and installer for the program

@@ -52,17 +52,17 @@ TmodelS = "EURUSD/EURUSD.h5" #Model to save
 #Predict
 next_RowTimestamp = 60 # Calculate the timestamp for the next row this value is in unix time
 #Buying
-Close_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
-Low_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
-High_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
+Close_buyadataAdjustor = 0.00001 #Adjusts to adata latest data adjust in positive range
+#Low_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
+#High_buyadataAdjustor = 0.000000 #Adjusts to adata latest data adjust in positive range
 buyVolume = float(Constantai_params.get('buyVolume', '0.01')) #The volume of trades to buy
 buyStoploss = float(Constantai_params.get('buyStoploss', '0.0001')) #Stop loss for buy action
 buyTakeProfit = float(Constantai_params.get('buyTakeProfit', '0.0001')) #Take profit for buy action
 buyMagic = int(Constantai_params.get('buyMagic', '123456')) # can identify
 #Selling
-Close_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
-Low_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
-High_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
+Close_selladataAdjustor = -0.00001 #Adjusts to adata latest data adjust in negative range
+#Low_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
+#High_selladataAdjustor = -0.000000 #Adjusts to adata latest data adjust in negative range
 sellVolume = float(Constantai_params.get('sellVolume', '0.01')) #The volume of trades to sell
 sellStoploss = float(Constantai_params.get('sellStoploss', '0.0001')) #Stop loss for sell action
 sellTakeProfit = float(Constantai_params.get('sellTakeProfit', '0.0001')) #Take profit for sell action
@@ -468,33 +468,45 @@ Y_train, Y_test = Y[:split], Y[split:]
 
 R_train, R_test = reward[:split], reward[split:]
 R_train = np.sign(R_train)  # Convert to -1, 0, or 1
-R_train = (R_train + 1) % 2  # Convert to 0 or 1
+R_train = np.where(np.logical_or(R_train==-1, R_train==0), 0, 1)
+#R_train = np.where(R_train == -1, 0, 1)
+#R_train = (R_train + 1) % 2  # Convert to 0 or 1
 R_test = np.sign(R_test)  # Convert to -1, 0, or 1
-R_test = (R_test + 1) % 2  # Convert to 0 or 1
+R_test = np.where(np.logical_or(R_test==-1, R_test==0), 0, 1)
+#R_test = np.where(R_test == -1, 0, 1)
+#R_test = (R_test + 1) % 2  # Convert to 0 or 1
 
 R0_train, R0_test = reward0[:split], reward0[split:]
 R0_train = np.sign(R0_train)  # Convert to -1, 0, or 1
-R0_train = (R0_train + 1) % 2  # Convert to 0 or 1
+R0_train = np.where(R0_train == 0, 1, 0)
+#R0_train = (R0_train + 1) % 2  # Convert to 0 or 1
 R0_test = np.sign(R0_test)  # Convert to -1, 0, or 1
-R0_test = (R0_test + 1) % 2  # Convert to 0 or 1
+R0_test = np.where(R0_test == 0, 1, 0)
+#R0_test = (R0_test + 1) % 2  # Convert to 0 or 1
 
 R1_train, R1_test = reward1[:split], reward1[split:]
 R1_train = np.sign(R1_train)  # Convert to -1, 0, or 1
-R1_train = (R1_train + 1) % 2  # Convert to 0 or 1
+R1_train = np.where(R1_train == 0, 1, 0)
+#R1_train = (R1_train + 1) % 2  # Convert to 0 or 1
 R1_test = np.sign(R1_test)  # Convert to -1, 0, or 1
-R1_test = (R1_test + 1) % 2  # Convert to 0 or 1
+R1_test = np.where(R1_test == 0, 1, 0)
+#R1_test = (R1_test + 1) % 2  # Convert to 0 or 1
 
 R2_train, R2_test = reward2[:split], reward2[split:]
 R2_train = np.sign(R2_train)  # Convert to -1, 0, or 1
-R2_train = (R2_train + 1) % 2  # Convert to 0 or 1
+R2_train = np.where(R2_train == 0, 1, 0)
+#R2_train = (R2_train + 1) % 2  # Convert to 0 or 1
 R2_test = np.sign(R2_test)  # Convert to -1, 0, or 1
-R2_test = (R2_test + 1) % 2  # Convert to 0 or 1
+R2_test = np.where(R2_test == 0, 1, 0)
+#R2_test = (R2_test + 1) % 2  # Convert to 0 or 1
 
 R3_train, R3_test = reward3[:split], reward3[split:]
 R3_train = np.sign(R3_train)  # Convert to -1, 0, or 1
-R3_train = (R3_train + 1) % 2  # Convert to 0 or 1
+R3_train = np.where(R3_train == 0, 1, 0)
+#R3_train = (R3_train + 1) % 2  # Convert to 0 or 1
 R3_test = np.sign(R3_test)  # Convert to -1, 0, or 1
-R3_test = (R3_test + 1) % 2  # Convert to 0 or 1
+R3_test = np.where(R3_test == 0, 1, 0)
+#R3_test = (R3_test + 1) % 2  # Convert to 0 or 1
 
 #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 logging.debug("Input training data <X_train>")
@@ -520,7 +532,7 @@ model.fit(X_train, Y_train, epochs=constantaiEpochs, batch_size=constantaiBatchs
           sample_weight=[R_train, R0_train, R1_train, R2_train, R3_train],
           validation_data=(X_test, Y_test),
           validation_steps=len(X_test),
-          callbacks=[keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=True, write_images=True)])
+          callbacks=[keras.callbacks.TensorBoard(log_dir='./EURUSD/logs', histogram_freq=1, write_graph=True, write_images=True)])
 
 model.save(TmodelS)
 
@@ -539,7 +551,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                       'Trusted_Connection=yes;')
 
 # Load adata from database
-query = f"SELECT TOP 1 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
+query = f"SELECT TOP 3 timestamp, [open], high, low, [close], tick_volume, spread, real_volume FROM EURUSDAdata ORDER BY timestamp DESC"
 data = []
 cursor = conn.cursor()
 cursor.execute(query)
@@ -551,10 +563,7 @@ cursor.close()
 data = np.array(data[::-1])
 X_new = data[:, 1:5]
 O_data = data[:, 1:5] 
-Adata_Actual = data[: 1:5]
 #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-logging.debug("Latest Actual rates data")
-logging.debug(Adata_Actual)
 logging.debug("Latest rates data")
 logging.debug(X_new)
 
@@ -588,12 +597,45 @@ Pred_Open = Y_pred[0,0]
 Pred_High = Y_pred[0,1]
 Pred_Low = Y_pred[0,2]
 Pred_Close = Y_pred[0,3]
-Last_Open = O_data[0,0]
-Last_High = O_data[0,1]
-Last_Low = O_data[0,2]
-Last_Close = O_data[0,3]
 
+Last_Open = O_data[2,0]
+Last_High = O_data[2,1]
+Last_Low = O_data[2,2]
+Last_Close = O_data[2,3]
 
+Second_Last_Open = O_data[1,0]
+Second_Last_High = O_data[1,1]
+Second_Last_Low = O_data[1,2]
+Second_Last_Close = O_data[1,3]
+
+Third_Last_Open = O_data[0,0]
+Third_Last_High = O_data[0,1]
+Third_Last_Low = O_data[0,2]
+Third_Last_Close = O_data[0,3]
+
+#print("PREDICTION")
+#print(Pred_Open)
+#print(Pred_High)
+#print(Pred_Low)
+#print(Pred_Close)
+
+#print("LASTDATA")
+#print(Last_Open)
+#print(Last_High)
+#print(Last_Low)
+#print(Last_Close)
+
+#print("SECOND LAST DATA")
+#print(Second_Last_Open)
+#print(Second_Last_High)
+#print(Second_Last_Low)
+#print(Second_Last_Close)
+
+#print("THIRD LAST DATA")
+#print(Third_Last_Open)
+#print(Third_Last_High)
+#print(Third_Last_Low)
+#print(Third_Last_Close)
 
 # Connect to the SQL Express database
 server = 'VENOM-CLIENT\SQLEXPRESS'
@@ -629,6 +671,28 @@ logging.debug(next_RowTimestamp)
 #**********************************************************************************************************************************
 
 
+# Load data from database
+#query = f"SELECT TOP 2 timestamp, reward FROM EURUSDAdata ORDER BY timestamp DESC"
+#cursor = conn.cursor()
+#cursor.execute(query)
+#data = cursor.fetchall()
+#for row in cursor:
+#    data.append(list(row))
+
+
+
+#Buy_deal_swapper = True
+#Sell_deal_swapper = True
+
+# Check if both values are -1
+#if data[0][1] == -1 and data[1][1] == -1:
+#    # Run your code here
+#    Buy_deal_swapper = False
+#    Sell_deal_swapper = False
+#    logging.debug("Deal Swapper used!!!!!!!!!")
+#    print("Deal Swapper used!!!!!!!!!")
+
+
 
 # Define the SQL statement to update the row with the predicted values
 query_insert_row = "INSERT INTO EURUSDAdata (timestamp, pred_time, pred_open, pred_high, pred_low, pred_close) VALUES (?, ?, ?, ?, ?, ?)"
@@ -642,19 +706,23 @@ conn.commit()
 conn.close()
 
 
-
-
-
-
-
 # Do something with the predictions
+
 Close_Decision_Adjustor_Buy = Close_buyadataAdjustor
-Low_Decision_Adjustor_Buy = Low_buyadataAdjustor
-High_Decision_Adjustor_Buy = High_buyadataAdjustor
+#Low_Decision_Adjustor_Buy = Low_buyadataAdjustor
+#High_Decision_Adjustor_Buy = High_buyadataAdjustor
 Last_Close_Buy_Helper = Last_Close + Close_Decision_Adjustor_Buy
-Last_Low_Buy_Helper = Last_Low + Low_Decision_Adjustor_Buy
-Last_High_Buy_Helper = Last_High + High_Decision_Adjustor_Buy
-if np.any(Pred_Close >= Last_Close_Buy_Helper) and (Pred_Low >= Last_Low_Buy_Helper) or (Pred_High >= Last_High_Buy_Helper) and (Pred_Close >= Last_Close_Buy_Helper):
+#Last_Low_Buy_Helper = Last_Low + Low_Decision_Adjustor_Buy
+#Last_High_Buy_Helper = Last_High + High_Decision_Adjustor_Buy
+#Second_Last_Close_Buy_Helper = Second_Last_Close + Close_Decision_Adjustor_Buy
+#Second_Last_Low_Buy_Helper = Second_Last_Low + Low_Decision_Adjustor_Buy
+#Second_Last_High_Buy_Helper = Second_Last_High + High_Decision_Adjustor_Buy
+#Third_Last_Close_Buy_Helper = Third_Last_Close + Close_Decision_Adjustor_Buy
+#Third_Last_Low_Buy_Helper = Third_Last_Low + Low_Decision_Adjustor_Buy
+#Third_Last_High_Buy_Helper = Third_Last_High + High_Decision_Adjustor_Buy
+
+
+if np.any(Last_Close >= Second_Last_Close) and (Second_Last_Close >= Third_Last_Close):
     #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     logging.debug("Last_Close_Buy_Helper")
     logging.debug(Last_Close_Buy_Helper)
@@ -720,14 +788,147 @@ if np.any(Pred_Close >= Last_Close_Buy_Helper) and (Pred_Low >= Last_Low_Buy_Hel
         logging.error("maximum number of attempts to execute the order reached")
         print("maximum number of attempts to execute the order reached")
 
+Close_Decision_Adjustor_Sell = Close_selladataAdjustor
+#Low_Decision_Adjustor_Sell = Low_selladataAdjustor
+#High_Decision_Adjustor_Sell = High_selladataAdjustor
+Last_Close_Sell_Helper = Last_Close + Close_Decision_Adjustor_Sell
+#Last_Low_Sell_Helper = Last_Low + Low_Decision_Adjustor_Sell
+#Last_High_Sell_Helper = Last_High + High_Decision_Adjustor_Sell
+if np.any(Last_Close <= Second_Last_Close) and (Second_Last_Close <= Third_Last_Close):
+    #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    logging.debug("Last_Close_Sell_Helper")
+    logging.debug(Last_Close_Sell_Helper)
+    # sell code here
+    # connect to MetaTrader 5
+    if not mt5.initialize():
+        mt5.shutdown()
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        logging.debug("initialize() failed")
+
+    # define the symbol and order type
+    symbol = symbol
+    lot_size = sellVolume
+    stop_loss = sellStoploss
+    take_profit = sellTakeProfit
+    magic_number = sellMagic
+    price = mt5.symbol_info_tick(symbol).bid
+    type = mt5.ORDER_TYPE_SELL
+
+    # set the maximum number of attempts to execute the order
+    max_attempts = 3
+    attempts = 0
+    order_executed = False
+
+    while not order_executed and attempts < max_attempts:
+        # create a request for a new order
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot_size,
+            "type": type,
+            "price": mt5.symbol_info_tick(symbol).bid,
+            "sl": price + stop_loss,
+            "tp": price - take_profit,
+            "magic": magic_number,
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+
+        # send the order request
+        result = mt5.order_send(request)
+        
+        # check if the order was executed successfully
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            logging.debug("order executed with order_id={}".format(result.order))
+            logging.debug("SELL")
+            print("SELLING")
+            order_executed = True
+        else:
+            #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            logging.debug("order failed with retcode={}".format(result.retcode))
+            logging.debug("message={}".format(result.comment))
+            print("SELL ORDER FAILED")
+            print("order failed with retcode={}".format(result.retcode))
+            print("message={}".format(result.comment))
+            attempts += 1
+
+    # check if the order was not executed after the maximum number of attempts
+    if not order_executed:
+        logging.error("maximum number of attempts to execute the order reached")
+        print("maximum number of attempts to execute the order reached")
+
+
 else:
-    Close_Decision_Adjustor_Sell = Close_selladataAdjustor
-    Low_Decision_Adjustor_Sell = Low_selladataAdjustor
-    High_Decision_Adjustor_Sell = High_selladataAdjustor
-    Last_Close_Sell_Helper = Last_Close + Close_Decision_Adjustor_Sell
-    Last_Low_Sell_Helper = Last_Low + Low_Decision_Adjustor_Sell
-    Last_High_Sell_Helper = Last_High + High_Decision_Adjustor_Sell
-    if np.any(Pred_Close <= Last_Close_Sell_Helper) and (Pred_Low <= Last_Low_Sell_Helper) or (Pred_High <= Last_High_Sell_Helper) and (Pred_Close <= Last_Close_Sell_Helper):
+    if np.any(Pred_Close >= Last_Close_Buy_Helper):
+        #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        logging.debug("Last_Close_Buy_Helper")
+        logging.debug(Last_Close_Buy_Helper)
+        # Buy Code
+
+        # connect to MetaTrader 5
+        if not mt5.initialize():
+            mt5.shutdown()
+            #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            logging.error("initialize() failed")
+
+        # define the symbol and order type
+        symbol = symbol
+        lot_size = buyVolume
+        stop_loss = buyStoploss
+        take_profit = buyTakeProfit
+        magic_number = buyMagic
+        price = mt5.symbol_info_tick(symbol).ask
+        type = mt5.ORDER_TYPE_BUY
+    
+        # set the maximum number of attempts to execute the order
+        max_attempts = 3
+        attempts = 0
+        order_executed = False
+    
+        while not order_executed and attempts < max_attempts:
+        
+            # create a request for a new order
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": lot_size,
+                "type": type,
+                "price": mt5.symbol_info_tick(symbol).ask,
+                "sl": price - stop_loss,
+                "tp": price + take_profit,
+                "magic": magic_number,
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": mt5.ORDER_FILLING_IOC,
+            }
+
+            # send the order request
+            result = mt5.order_send(request)
+
+            # check if the order was executed successfully
+            if result.retcode == mt5.TRADE_RETCODE_DONE:
+                #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                logging.debug("order executed with order_id={}".format(result.order))
+                logging.debug("BUY")
+                print("BUYING")
+                order_executed = True
+            else:
+                #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                logging.error("order failed with retcode={}".format(result.retcode))
+                logging.error("message={}".format(result.comment))
+                print("BUY ORDER FAILED")
+                print("order failed with retcode={}".format(result.retcode))
+                print("message={}".format(result.comment))
+                attempts += 1
+
+        # check if the order was not executed after the maximum number of attempts
+        if not order_executed:
+            logging.error("maximum number of attempts to execute the order reached")
+            print("maximum number of attempts to execute the order reached")
+
+
+
+    if np.any(Pred_Close <= Last_Close_Sell_Helper):
         #logging    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         logging.debug("Last_Close_Sell_Helper")
         logging.debug(Last_Close_Sell_Helper)

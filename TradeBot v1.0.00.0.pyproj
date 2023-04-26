@@ -24,6 +24,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EURUSD\module1.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="EURUSD\testmodel.py">
       <SubType>Code</SubType>
     </Compile>
